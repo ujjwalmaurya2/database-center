@@ -423,6 +423,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   public async getQuotaInfo(userId: string): Promise<QuotaInfo> {
     const { drive, isReal } = await this.getAuthenticatedDriveClient(userId);
 
+    // 1. Attempt to fetch real live quota
     if (isReal && drive) {
       try {
         const aboutRes = await drive.about.get({ fields: 'storageQuota' });
@@ -439,9 +440,9 @@ export class GoogleDriveStorageProvider implements StorageProvider {
       }
     }
 
-    // Local resilient store fallback
-    const userFiles = GoogleDriveStorageProvider.localFileStore.get(userId) || [];
-    const usedByApp = userFiles.reduce((acc, f) => acc + f.size, 0);
+    // 2. Local resilient store fallback
+    const fallbackFiles = GoogleDriveStorageProvider.localFileStore.get(userId) || [];
+    const usedByApp = fallbackFiles.reduce((acc, f) => acc + f.size, 0);
     const totalBytes = 15 * 1024 * 1024 * 1024; // 15 GB
     const baseUsedBytes = 6.2 * 1024 * 1024 * 1024; // 6.2 GB
     const usedBytes = baseUsedBytes + usedByApp;
@@ -456,6 +457,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   public async getFileMetadata(userId: string, fileIdOrPath: string): Promise<FileMetadata> {
     const userFiles = GoogleDriveStorageProvider.localFileStore.get(userId) || [];
     const file = userFiles.find((f) => f.id === fileIdOrPath || f.path === fileIdOrPath);
+
     if (file) {
       return {
         id: file.id,
