@@ -1,39 +1,29 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
+      "source": "/",
+      "destination": "/index.html"
     },
     {
-      "src": "public/**/*",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.ts"
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "/health",
-      "dest": "api/index.ts"
+      "source": "/health",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "/ready",
-      "dest": "api/index.ts"
+      "source": "/ready",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "/metrics",
-      "dest": "api/index.ts"
+      "source": "/metrics",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "/api-docs",
-      "dest": "api/index.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "public/$1"
+      "source": "/api-docs",
+      "destination": "/api/index.ts"
     }
   ]
 }
