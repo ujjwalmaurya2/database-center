@@ -10,31 +10,61 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   public readonly providerName = 'google_drive';
   public static readonly appFolderName = 'DriveBase-App';
 
-  private checkCredentials(): void {
-    if (
-      !envConfig.googleClientId ||
-      !envConfig.googleClientSecret ||
-      envConfig.googleClientId === 'mock_google_client_id' ||
-      envConfig.googleClientSecret === 'mock_google_client_secret'
-    ) {
+  private async getProjectCredentials(projectIdOrUserId?: string): Promise<{ clientId: string; clientSecret: string; redirectUri: string }> {
+    let clientId: string | null = null;
+    let clientSecret: string | null = null;
+
+    if (projectIdOrUserId) {
+      try {
+        let project = await prisma.project.findUnique({ where: { id: projectIdOrUserId } });
+        if (!project) {
+          project = await prisma.project.findFirst({ where: { ownerId: projectIdOrUserId } });
+        }
+        if (!project) {
+          project = await prisma.project.findFirst({ where: { googleClientId: { not: null } } });
+        }
+
+        if (project && project.googleClientId && project.googleClientSecret) {
+          clientId = project.googleClientId;
+          clientSecret = EncryptionService.decryptToken(project.googleClientSecret);
+        }
+      } catch (err) {
+        console.warn('[GoogleDriveProvider] Error querying project credentials:', (err as Error).message);
+      }
+    }
+
+    if (!clientId || !clientSecret) {
+      if (
+        envConfig.googleClientId &&
+        envConfig.googleClientSecret &&
+        envConfig.googleClientId !== 'mock_google_client_id' &&
+        envConfig.googleClientSecret !== 'mock_google_client_secret'
+      ) {
+        clientId = envConfig.googleClientId;
+        clientSecret = envConfig.googleClientSecret;
+      }
+    }
+
+    if (!clientId || !clientSecret) {
       throw AppError.badRequest(
-        'Missing Google Cloud Credentials in .env. Please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'
+        'Google Drive API credentials not configured for this project. Please configure them in Project Settings.'
       );
     }
+
+    return {
+      clientId,
+      clientSecret,
+      redirectUri: envConfig.googleRedirectUri,
+    };
   }
 
-  public getOAuth2Client() {
-    this.checkCredentials();
-    return new google.auth.OAuth2(
-      envConfig.googleClientId,
-      envConfig.googleClientSecret,
-      envConfig.googleRedirectUri
-    );
+  public async getOAuth2Client(projectIdOrUserId?: string) {
+    const creds = await this.getProjectCredentials(projectIdOrUserId);
+    return new google.auth.OAuth2(creds.clientId, creds.clientSecret, creds.redirectUri);
   }
 
-  public getAuthUrl(): string {
-    this.checkCredentials();
-    const oauth2Client = this.getOAuth2Client();
+  public async getAuthUrl(projectIdOrUserId?: string): Promise<string> {
+    const oauth2Client = await this.getOAuth2Client(projectIdOrUserId);
     return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
@@ -47,7 +77,6 @@ export class GoogleDriveStorageProvider implements StorageProvider {
 
   // Automatic Token Refresh and Authenticated Drive API Client Factory
   private async getAuthenticatedDriveClient(userId: string): Promise<drive_v3.Drive> {
-    this.checkCredentials();
     let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       user = await prisma.user.findFirst();
@@ -59,7 +88,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
     const decryptedAccess = EncryptionService.decryptToken(user.googleAccessToken);
     const decryptedRefresh = user.googleRefreshToken ? EncryptionService.decryptToken(user.googleRefreshToken) : null;
 
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client(user.id);
     oauth2Client.setCredentials({
       access_token: decryptedAccess,
       refresh_token: decryptedRefresh || undefined,
@@ -112,12 +141,11 @@ export class GoogleDriveStorageProvider implements StorageProvider {
     return folderRes.data.id!;
   }
 
-  public async connect(credentials: { code?: string; userId?: string }): Promise<boolean> {
-    this.checkCredentials();
-    const { code, userId } = credentials;
+  public async connect(credentials: { code?: string; userId?: string; projectId?: string }): Promise<boolean> {
+    const { code, userId, projectId } = credentials;
     if (!userId || !code) return false;
 
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client(projectId || userId);
     const { tokens } = await oauth2Client.getToken(code);
     const accessToken = tokens.access_token!;
     const refreshToken = tokens.refresh_token || undefined;
@@ -170,7 +198,6 @@ export class GoogleDriveStorageProvider implements StorageProvider {
 
   public async isConnected(userId: string): Promise<boolean> {
     try {
-      this.checkCredentials();
       let user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         user = await prisma.user.findFirst();

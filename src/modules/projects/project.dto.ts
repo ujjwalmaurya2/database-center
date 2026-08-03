@@ -23,6 +23,12 @@ export const BulkSetEnvVarDTO = z.object({
   envVars: z.array(SetEnvVarDTO),
 });
 
+export const SetGoogleCredentialsDTO = z.object({
+  clientId: z.string().min(5, 'Client ID is required'),
+  clientSecret: z.string().min(5, 'Client Secret is required'),
+});
+
 export type CreateProjectInput = z.infer<typeof CreateProjectDTO>;
 export type UpdateProjectInput = z.infer<typeof UpdateProjectDTO>;
 export type SetEnvVarInput = z.infer<typeof SetEnvVarDTO>;
+export type SetGoogleCredentialsInput = z.infer<typeof SetGoogleCredentialsDTO>;

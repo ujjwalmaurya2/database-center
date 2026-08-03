@@ -26,7 +26,56 @@
 <main class="flex-1 p-6 space-y-6 overflow-y-auto">
 <h2 class="text-2xl font-bold">Project Settings &amp; Secrets Management</h2>
 
-<!-- Project Details Card -->
+<!-- Bring Your Own Google OAuth Credentials Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-indigo-500/40 space-y-4">
+<div class="flex justify-between items-center">
+  <div>
+    <h3 class="font-bold text-lg text-on-surface flex items-center gap-2">
+      <span class="material-symbols-outlined text-indigo-400">key</span>
+      Google Drive API Configuration (Bring Your Own Keys)
+    </h3>
+    <p class="text-xs text-on-surface-variant">Configure your custom Google Cloud Console OAuth 2.0 Credentials for this project.</p>
+  </div>
+  <span id="gcpStatusBadge" class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-red-950/60 text-red-300 border border-red-800/40">🔴 Missing Credentials</span>
+</div>
+
+<!-- Mandatory Authorized Redirect URI Box -->
+<div class="p-3 bg-surface rounded-lg border border-outline-variant/50 space-y-1">
+  <span class="text-[11px] text-on-surface-variant uppercase font-bold tracking-wider block">Authorized Redirect URI (Google Cloud Console)</span>
+  <div class="flex items-center gap-2">
+    <input id="redirectUriBox" type="text" readonly value="http://localhost:3000/api/v1/auth/google/callback" class="flex-1 bg-surface-container-low border border-outline-variant rounded px-3 py-1.5 text-xs text-indigo-300 font-mono focus:outline-none"/>
+    <button type="button" onclick="copyRedirectUri()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold transition flex items-center gap-1">
+      <span class="material-symbols-outlined text-[14px]">content_copy</span> Copy Link
+    </button>
+  </div>
+</div>
+
+<form id="byoGoogleForm" class="space-y-4">
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Google Client ID</label>
+  <input id="byoClientId" type="text" placeholder="123456789-abc.apps.googleusercontent.com" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface font-mono" required/>
+</div>
+
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Google Client Secret</label>
+  <div class="relative">
+    <input id="byoClientSecret" type="password" placeholder="GOCSPX-••••••••••••••••" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 pr-10 text-sm text-on-surface font-mono" required/>
+    <button type="button" id="toggleSecretBtn" class="absolute right-2 top-2 text-on-surface-variant hover:text-on-surface">
+      <span class="material-symbols-outlined text-[18px]">visibility</span>
+    </button>
+  </div>
+  <p class="text-[11px] text-on-surface-variant mt-1">Client Secret is encrypted in PostgreSQL using AES-256-GCM prior to storage.</p>
+</div>
+
+<div class="flex items-center gap-3">
+  <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded font-semibold text-sm hover:bg-indigo-500 transition">Save Google Credentials</button>
+  <button type="button" id="deleteGoogleCredsBtn" class="px-4 py-2 bg-red-900/40 text-red-300 border border-red-800/40 rounded font-semibold text-sm hover:bg-red-800/60 transition hidden">Delete Keys</button>
+</div>
+</form>
+<div id="byoAlert" class="hidden p-3 text-xs rounded"></div>
+</div>
+
+<!-- General Project Configuration Card -->
 <div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
 <h3 class="font-bold text-lg text-on-surface">General Project Configuration</h3>
 <form id="projectDetailsForm" class="space-y-4">
@@ -95,6 +144,42 @@
 
   let currentProjId = 'proj_alpha_1';
 
+  function copyRedirectUri() {
+    const box = document.getElementById('redirectUriBox');
+    box.select();
+    navigator.clipboard.writeText(box.value);
+    alert('Redirect URI copied to clipboard!');
+  }
+
+  // Show/Hide Secret Toggle
+  document.getElementById('toggleSecretBtn').addEventListener('click', () => {
+    const input = document.getElementById('byoClientSecret');
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    document.getElementById('toggleSecretBtn').querySelector('span').innerText = isPass ? 'visibility_off' : 'visibility';
+  });
+
+  async function loadGoogleCredentials() {
+    const badge = document.getElementById('gcpStatusBadge');
+    const deleteBtn = document.getElementById('deleteGoogleCredsBtn');
+    try {
+      const res = await DriveBaseAPI.getGoogleCredentials(currentProjId);
+      if (res.data && res.data.configured) {
+        document.getElementById('byoClientId').value = res.data.clientId || '';
+        document.getElementById('byoClientSecret').value = res.data.clientSecret || '';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40';
+        badge.innerText = '🟢 Credentials Configured';
+        deleteBtn.classList.remove('hidden');
+      } else {
+        badge.className = 'px-3 py-1 rounded-full text-xs font-mono font-semibold bg-red-950/60 text-red-300 border border-red-800/40';
+        badge.innerText = '🔴 Missing Credentials';
+        deleteBtn.classList.add('hidden');
+      }
+    } catch(e) {
+      console.warn('Google credentials status note:', e.message);
+    }
+  }
+
   async function loadProjectDetails() {
     try {
       const projects = await DriveBaseAPI.getProjects();
@@ -103,13 +188,47 @@
         currentProjId = proj.id;
         document.getElementById('projName').value = proj.name;
         document.getElementById('projDesc').value = proj.description || '';
+        loadGoogleCredentials();
         loadEnvVars();
       }
     } catch(e) {
       console.warn('Using default project context');
+      loadGoogleCredentials();
       loadEnvVars();
     }
   }
+
+  // Save BYO Google Credentials
+  document.getElementById('byoGoogleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const clientId = document.getElementById('byoClientId').value.trim();
+    const clientSecret = document.getElementById('byoClientSecret').value.trim();
+    const alert = document.getElementById('byoAlert');
+    try {
+      await DriveBaseAPI.saveGoogleCredentials(currentProjId, clientId, clientSecret);
+      alert.className = 'p-3 text-xs rounded bg-emerald-900/40 text-emerald-300 border border-emerald-500/30';
+      alert.innerText = '✓ Project Google OAuth credentials saved and AES-256 encrypted!';
+      alert.classList.remove('hidden');
+      loadGoogleCredentials();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded bg-red-900/40 text-red-300 border border-red-500/30';
+      alert.innerText = '✕ Error saving credentials: ' + err.message;
+      alert.classList.remove('hidden');
+    }
+  });
+
+  // Delete BYO Google Credentials
+  document.getElementById('deleteGoogleCredsBtn').addEventListener('click', async () => {
+    if (!confirm('Remove project Google API credentials?')) return;
+    try {
+      await DriveBaseAPI.deleteGoogleCredentials(currentProjId);
+      document.getElementById('byoClientId').value = '';
+      document.getElementById('byoClientSecret').value = '';
+      loadGoogleCredentials();
+    } catch(e) {
+      alert('Delete failed: ' + e.message);
+    }
+  });
 
   async function loadEnvVars() {
     const tbody = document.getElementById('envTableBody');

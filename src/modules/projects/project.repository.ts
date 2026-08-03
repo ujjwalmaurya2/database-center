@@ -8,6 +8,8 @@ interface InMemoryProject {
   description: string | null;
   status: string;
   ownerId: string;
+  googleClientId?: string | null;
+  googleClientSecret?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -119,6 +121,44 @@ export class ProjectRepository {
     } catch {
       const proj = this.inMemoryProjects.find((p) => p.id === id);
       if (proj) proj.status = 'archived';
+      return proj;
+    }
+  }
+
+  public static async setGoogleCredentials(id: string, clientId: string, encryptedSecret: string) {
+    try {
+      return await prisma.project.update({
+        where: { id },
+        data: {
+          googleClientId: clientId,
+          googleClientSecret: encryptedSecret,
+        },
+      });
+    } catch {
+      const proj = this.inMemoryProjects.find((p) => p.id === id);
+      if (proj) {
+        proj.googleClientId = clientId;
+        proj.googleClientSecret = encryptedSecret;
+      }
+      return proj;
+    }
+  }
+
+  public static async deleteGoogleCredentials(id: string) {
+    try {
+      return await prisma.project.update({
+        where: { id },
+        data: {
+          googleClientId: null,
+          googleClientSecret: null,
+        },
+      });
+    } catch {
+      const proj = this.inMemoryProjects.find((p) => p.id === id);
+      if (proj) {
+        proj.googleClientId = null;
+        proj.googleClientSecret = null;
+      }
       return proj;
     }
   }

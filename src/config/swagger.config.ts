@@ -21,7 +21,7 @@ const swaggerDocument = {
   info: {
     title: 'DriveBase BaaS Platform API',
     version: '1.0.0',
-    description: 'Production-ready Backend-as-a-Service API documentation for DriveBase. Supports multi-tenant projects, authentication, RBAC, Redis session caching, and Google Drive storage provider abstraction.',
+    description: 'Production-ready Backend-as-a-Service API documentation for DriveBase. Supports multi-tenant projects, authentication, BYO Google OAuth credentials, RBAC, Redis session caching, and Google Drive storage provider abstraction.',
     contact: {
       name: 'DriveBase Engineering Team',
       email: 'support@drivebase.io',
@@ -37,7 +37,7 @@ const swaggerDocument = {
     { name: 'Health', description: 'System health probes and Prometheus metrics' },
     { name: 'Authentication', description: 'User registration, login, JWT token rotation, and profile management' },
     { name: 'Google Drive Storage', description: 'Google OAuth consent, AES-256 token security, Drive folder isolation, quota checks, and file operations' },
-    { name: 'Projects & Environment', description: 'Multi-tenant project CRUD, status management, and encrypted secrets' },
+    { name: 'Projects & Environment', description: 'Multi-tenant project CRUD, BYO Google API Credentials, status management, and encrypted secrets' },
     { name: 'Administration', description: 'RBAC protected administrative routes and system tests' },
   ],
   components: {
@@ -90,6 +90,11 @@ const swaggerDocument = {
     '/storage/status': { get: { tags: ['Google Drive Storage'], summary: 'Get active storage provider status', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Provider status' } } } },
     '/storage/quota': { get: { tags: ['Google Drive Storage'], summary: 'Get storage quota metrics (total, used, remaining)', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Quota metrics' } } } },
     '/storage/upload': { post: { tags: ['Google Drive Storage'], summary: 'Upload file directly to Google Drive app folder', security: [{ bearerAuth: [] }], responses: { '201': { description: 'Uploaded metadata' } } } },
+    '/projects/{id}/google-credentials': {
+      get: { tags: ['Projects & Environment'], summary: 'Get project BYO Google OAuth credentials status & masked secret', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Credentials status & masked secret' } } },
+      post: { tags: ['Projects & Environment'], summary: 'Save project BYO Google Client ID and AES-256 encrypted Client Secret', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Saved' } } },
+      delete: { tags: ['Projects & Environment'], summary: 'Remove project BYO Google API credentials', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Deleted' } } },
+    },
     '/storage/files/{id}/download': { get: { tags: ['Google Drive Storage'], summary: 'Download file from Google Drive', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'File binary stream' } } } },
     '/storage/files/{id}': {
       patch: { tags: ['Google Drive Storage'], summary: 'Rename file on Google Drive', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Updated file metadata' } } },

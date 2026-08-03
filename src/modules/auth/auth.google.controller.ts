@@ -7,7 +7,11 @@ const googleProvider = new GoogleDriveStorageProvider();
 export class GoogleAuthController {
   public static async initiateAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const authUrl = googleProvider.getAuthUrl();
+      const projectId = (req.query.projectId as string) || (req.headers['x-project-id'] as string);
+      const userId = (req as AuthenticatedRequest).user?.id;
+      const targetId = projectId || userId;
+
+      const authUrl = await googleProvider.getAuthUrl(targetId);
       res.redirect(authUrl);
     } catch (error) {
       next(error);
@@ -18,8 +22,9 @@ export class GoogleAuthController {
     try {
       const code = (req.query.code as string) || '';
       const userId = (req as AuthenticatedRequest).user?.id || 'usr_demo_1';
+      const projectId = (req.query.projectId as string);
 
-      await googleProvider.connect({ code, userId });
+      await googleProvider.connect({ code, userId, projectId });
 
       // Redirect back to frontend storage page with success indicator
       res.redirect('/storage.html?drive_connected=true');

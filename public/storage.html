@@ -36,13 +36,16 @@
   </div>
 </div>
 
-<!-- API Key Configuration Banner (Hidden by default, shown if GCP keys missing) -->
+<!-- API Key Configuration Banner (Shown if GCP keys missing for project) -->
 <div id="gcpConfigWarning" class="hidden p-4 rounded-xl bg-yellow-950/40 border border-yellow-700/50 text-yellow-300 space-y-2">
-  <div class="flex items-center gap-2 font-bold text-sm">
-    <span class="material-symbols-outlined text-yellow-400">warning</span> Missing Google Cloud Credentials in .env
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-2 font-bold text-sm">
+      <span class="material-symbols-outlined text-yellow-400">warning</span> Missing Google Client Credentials
+    </div>
+    <a href="settings.html" class="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-bold rounded text-xs transition">Configure in Settings</a>
   </div>
-  <p class="text-xs text-yellow-200/90">
-    Please set <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">GOOGLE_CLIENT_ID</code> and <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">GOOGLE_CLIENT_SECRET</code> in your server's <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">.env</code> file to enable Google Drive OAuth and file storage operations.
+  <p id="gcpConfigWarningText" class="text-xs text-yellow-200/90">
+    Please configure your Google Client ID and Secret in Settings to enable Google Drive storage for this project.
   </p>
 </div>
 
@@ -67,7 +70,7 @@
 <div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
   <span class="text-xs text-on-surface-variant uppercase">Active Storage Plugin</span>
   <h3 class="text-lg font-bold text-indigo-300">GoogleDriveStorageProvider</h3>
-  <p class="text-xs text-emerald-400 font-mono">AES-256 Tokens Encrypted</p>
+  <p class="text-xs text-emerald-400 font-mono">BYO Credentials Active</p>
 </div>
 </div>
 
@@ -125,10 +128,24 @@
   function showErrorBanner(msg) {
     const banner = document.getElementById('gcpConfigWarning');
     banner.classList.remove('hidden');
-    banner.querySelector('p').innerText = msg;
+    document.getElementById('gcpConfigWarningText').innerText = msg;
+  }
+
+  async function checkProjectCredentials() {
+    try {
+      const activeProj = DriveBaseAPI.getActiveProjectId();
+      const res = await DriveBaseAPI.getGoogleCredentials(activeProj);
+      if (!res.data || !res.data.configured) {
+        showErrorBanner('Please configure your Google Client ID and Secret in Settings to enable Google Drive storage for this project.');
+      }
+    } catch(e) {
+      // Ignore if endpoint check fails
+    }
   }
 
   async function loadStorageOverview() {
+    await checkProjectCredentials();
+
     try {
       const statusRes = await DriveBaseAPI.getGoogleStatus();
       if (statusRes.data) {
@@ -146,7 +163,7 @@
         document.getElementById('driveQuotaBar').style.width = pct + '%';
       }
     } catch(e) {
-      if (e.message && e.message.includes('Missing Google Cloud Credentials')) {
+      if (e.message && e.message.includes('credentials not configured')) {
         showErrorBanner(e.message);
       } else {
         console.warn('Storage overview note:', e.message);
@@ -176,7 +193,7 @@
     } catch(err) {
       alert.className = 'p-3 text-xs rounded-lg bg-red-900/40 text-red-300 border border-red-500/30';
       alert.innerText = `✕ Upload failed: ${err.message}`;
-      if (err.message && err.message.includes('Missing Google Cloud Credentials')) {
+      if (err.message && err.message.includes('credentials not configured')) {
         showErrorBanner(err.message);
       }
     }

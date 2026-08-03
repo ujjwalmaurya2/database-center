@@ -1,5 +1,5 @@
 import { ProjectRepository } from './project.repository';
-import { CreateProjectInput, UpdateProjectInput, SetEnvVarInput } from './project.dto';
+import { CreateProjectInput, UpdateProjectInput, SetEnvVarInput, SetGoogleCredentialsInput } from './project.dto';
 import { EncryptionService } from '../../core/crypto/encryption.service';
 import { AppError } from '../../core/errors/app-error';
 
@@ -71,6 +71,39 @@ export class ProjectService {
     }
 
     return await ProjectRepository.updateProject(projectId, { status: 'active' });
+  }
+
+  // BYO Google Credentials Methods
+  public static async saveGoogleCredentials(projectId: string, userId: string, input: SetGoogleCredentialsInput) {
+    await this.getProjectDetails(projectId, userId);
+
+    const encryptedSecret = EncryptionService.encryptToken(input.clientSecret);
+    await ProjectRepository.setGoogleCredentials(projectId, input.clientId, encryptedSecret);
+
+    return {
+      configured: true,
+      clientId: input.clientId,
+      clientSecret: '••••••••',
+      redirectUri: 'http://localhost:3000/api/v1/auth/google/callback',
+    };
+  }
+
+  public static async getGoogleCredentials(projectId: string, userId: string) {
+    const project = await this.getProjectDetails(projectId, userId);
+    const isConfigured = !!(project.googleClientId && project.googleClientSecret);
+
+    return {
+      configured: isConfigured,
+      clientId: project.googleClientId || null,
+      clientSecret: isConfigured ? '••••••••' : null,
+      redirectUri: 'http://localhost:3000/api/v1/auth/google/callback',
+    };
+  }
+
+  public static async deleteGoogleCredentials(projectId: string, userId: string) {
+    await this.getProjectDetails(projectId, userId);
+    await ProjectRepository.deleteGoogleCredentials(projectId);
+    return { success: true, message: 'Google API credentials removed for project' };
   }
 
   public static async setEnvironmentVariable(projectId: string, userId: string, input: SetEnvVarInput) {

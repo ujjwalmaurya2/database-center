@@ -89,6 +89,50 @@ export class ProjectController {
     }
   }
 
+  // BYO Google Credentials Controller Actions
+  public static async setGoogleCredentials(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const projectId = req.params.id;
+      const credentials = await ProjectService.saveGoogleCredentials(projectId, userId, req.body);
+      res.status(200).json({
+        success: true,
+        message: 'Google Drive API credentials saved for project',
+        data: credentials,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async getGoogleCredentials(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const projectId = req.params.id;
+      const credentials = await ProjectService.getGoogleCredentials(projectId, userId);
+      res.status(200).json({
+        success: true,
+        data: credentials,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async deleteGoogleCredentials(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const projectId = req.params.id;
+      const result = await ProjectService.deleteGoogleCredentials(projectId, userId);
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public static async setEnv(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.id;

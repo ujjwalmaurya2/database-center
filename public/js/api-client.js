@@ -53,7 +53,13 @@ class DriveBaseAPI {
 
   static getGoogleAuthUrl() {
     const token = this.getAccessToken();
-    return `${this.baseUrl}/auth/google${token ? '?token=' + encodeURIComponent(token) : ''}`;
+    const projectId = this.getActiveProjectId();
+    let url = `${this.baseUrl}/auth/google`;
+    const params = [];
+    if (token) params.push(`token=${encodeURIComponent(token)}`);
+    if (projectId) params.push(`projectId=${encodeURIComponent(projectId)}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return url;
   }
 
   static async request(endpoint, options = {}) {
@@ -143,6 +149,22 @@ class DriveBaseAPI {
 
   static async disconnectGoogle() {
     return this.request('/auth/google/disconnect', { method: 'POST' });
+  }
+
+  // BYO Google Credentials Methods
+  static async getGoogleCredentials(projectId) {
+    return this.request(`/projects/${projectId}/google-credentials`, { method: 'GET' });
+  }
+
+  static async saveGoogleCredentials(projectId, clientId, clientSecret) {
+    return this.request(`/projects/${projectId}/google-credentials`, {
+      method: 'POST',
+      body: JSON.stringify({ clientId, clientSecret }),
+    });
+  }
+
+  static async deleteGoogleCredentials(projectId) {
+    return this.request(`/projects/${projectId}/google-credentials`, { method: 'DELETE' });
   }
 
   // StorageProvider Methods

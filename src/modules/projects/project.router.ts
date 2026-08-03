@@ -3,7 +3,7 @@ import { ProjectController } from './project.controller';
 import { authenticateJWT } from '../../middleware/auth.middleware';
 import { validateRequest } from '../../middleware/validation.middleware';
 import { requireRole } from '../../middleware/rbac.middleware';
-import { CreateProjectDTO, UpdateProjectDTO, SetEnvVarDTO } from './project.dto';
+import { CreateProjectDTO, UpdateProjectDTO, SetEnvVarDTO, SetGoogleCredentialsDTO } from './project.dto';
 
 const router = Router();
 
@@ -16,6 +16,11 @@ router.get('/:id', ProjectController.getById);
 router.patch('/:id', validateRequest(UpdateProjectDTO), ProjectController.update);
 router.delete('/:id', requireRole('OWNER'), ProjectController.delete);
 router.post('/:id/restore', requireRole('OWNER'), ProjectController.restore);
+
+// Project BYO Google API Credentials Routes
+router.get('/:id/google-credentials', ProjectController.getGoogleCredentials);
+router.post('/:id/google-credentials', validateRequest(SetGoogleCredentialsDTO), ProjectController.setGoogleCredentials);
+router.delete('/:id/google-credentials', ProjectController.deleteGoogleCredentials);
 
 // Project Config & Env Vars Routes
 router.get('/:id/env', ProjectController.getEnv);
