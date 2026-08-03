@@ -1,9 +1,22 @@
-// DriveBase Central API Client
+// DriveBase Central API Client with JWT Persistence & Route Protection
 class DriveBaseAPI {
   static baseUrl = '/api/v1';
 
   static getAccessToken() {
     return localStorage.getItem('drivebase_access_token');
+  }
+
+  static getRefreshToken() {
+    return localStorage.getItem('drivebase_refresh_token');
+  }
+
+  static getUserProfile() {
+    const raw = localStorage.getItem('drivebase_user_profile');
+    try {
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   static getActiveProjectId() {
@@ -14,19 +27,40 @@ class DriveBaseAPI {
     localStorage.setItem('drivebase_active_project_id', id);
   }
 
-  static setTokens(accessToken, refreshToken) {
-    localStorage.setItem('drivebase_access_token', accessToken);
-    localStorage.setItem('drivebase_refresh_token', refreshToken);
+  static setSession(accessToken, refreshToken, userProfile) {
+    if (accessToken) localStorage.setItem('drivebase_access_token', accessToken);
+    if (refreshToken) localStorage.setItem('drivebase_refresh_token', refreshToken);
+    if (userProfile) localStorage.setItem('drivebase_user_profile', JSON.stringify(userProfile));
   }
 
-  static clearTokens() {
+  static clearSession() {
     localStorage.removeItem('drivebase_access_token');
     localStorage.removeItem('drivebase_refresh_token');
+    localStorage.removeItem('drivebase_user_profile');
+  }
+
+  static requireAuth() {
+    const token = this.getAccessToken();
+    if (!token) {
+      const currentPath = window.location.pathname;
+      if (!currentPath.endsWith('auth.html')) {
+        window.location.href = 'auth.html';
+      }
+      return false;
+    }
+    return true;
+  }
+
+  static getGoogleAuthUrl() {
+    const token = this.getAccessToken();
+    return `${this.baseUrl}/auth/google${token ? '?token=' + encodeURIComponent(token) : ''}`;
   }
 
   static async request(endpoint, options = {}) {
     const token = this.getAccessToken();
     const activeProject = this.getActiveProjectId();
+    
+    // Automatically attach Bearer Authorization token to all requests
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -41,6 +75,17 @@ class DriveBaseAPI {
       });
 
       const data = await response.json();
+      
+      // If 401 Unauthorized occurs on protected routes, clear session & redirect to login
+      if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+        console.warn(`[DriveBase API] 401 Unauthorized on ${endpoint}. Session expired.`);
+        this.clearSession();
+        if (!window.location.pathname.endsWith('auth.html')) {
+          window.location.href = 'auth.html';
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+
       if (!response.ok) {
         throw new Error(data.error?.message || 'API request failed');
       }
@@ -58,7 +103,7 @@ class DriveBaseAPI {
       body: JSON.stringify({ email, password }),
     });
     if (res.data?.accessToken) {
-      this.setTokens(res.data.accessToken, res.data.refreshToken);
+      this.setSession(res.data.accessToken, res.data.refreshToken, res.data.user);
     }
     return res;
   }
@@ -69,20 +114,25 @@ class DriveBaseAPI {
       body: JSON.stringify({ email, password, fullName, role }),
     });
     if (res.data?.accessToken) {
-      this.setTokens(res.data.accessToken, res.data.refreshToken);
+      this.setSession(res.data.accessToken, res.data.refreshToken, res.data.user);
     }
     return res;
   }
 
   static async getProfile() {
-    return this.request('/auth/me', { method: 'GET' });
+    const res = await this.request('/auth/me', { method: 'GET' });
+    if (res.data) {
+      localStorage.setItem('drivebase_user_profile', JSON.stringify(res.data));
+    }
+    return res;
   }
 
   static async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
     } finally {
-      this.clearTokens();
+      this.clearSession();
+      window.location.href = 'auth.html';
     }
   }
 

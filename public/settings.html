@@ -90,6 +90,9 @@
 
 <script src="js/api-client.js"></script>
 <script>
+  // Enforce authentication on protected page load
+  DriveBaseAPI.requireAuth();
+
   let currentProjId = 'proj_alpha_1';
 
   async function loadProjectDetails() {

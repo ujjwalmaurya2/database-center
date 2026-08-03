@@ -11,12 +11,19 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function authenticateJWT(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query.token && typeof req.query.token === 'string') {
+    token = req.query.token;
+  }
+
+  if (!token) {
     return next(AppError.unauthorized('Missing or invalid Authorization header'));
   }
 
-  const token = authHeader.split(' ')[1];
   try {
     const decoded = EncryptionService.verifyAccessToken(token);
     req.user = decoded;

@@ -30,7 +30,7 @@
     <p class="text-xs text-on-surface-variant mt-1">Isolated Application Folder: <code class="text-indigo-400 font-mono">DriveBase-App/</code></p>
   </div>
   <div class="flex items-center gap-3">
-    <a href="/api/v1/auth/google" id="connectDriveBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-xs hover:bg-indigo-500 transition flex items-center gap-2">
+    <a href="#" id="connectDriveBtn" onclick="handleConnectDrive(event)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-xs hover:bg-indigo-500 transition flex items-center gap-2">
       <span class="material-symbols-outlined text-[16px]">cloud_sync</span> Connect Google Drive
     </a>
   </div>
@@ -103,7 +103,15 @@
 
 <script src="js/api-client.js"></script>
 <script>
+  // Enforce authentication on protected page load
+  DriveBaseAPI.requireAuth();
+
   let storedFilesList = [];
+
+  function handleConnectDrive(e) {
+    e.preventDefault();
+    window.location.href = DriveBaseAPI.getGoogleAuthUrl();
+  }
 
   async function loadStorageOverview() {
     try {
@@ -122,7 +130,7 @@
         document.getElementById('driveQuotaBar').style.width = pct + '%';
       }
     } catch(e) {
-      console.warn('Storage overview loaded in mock mode');
+      console.warn('Storage overview error:', e.message);
     }
   }
 
