@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
     "lint": "eslint src/**/*.ts",
-    "test": "jest --passWithNoTests"
+    "test": "ts-node src/test/ci.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

@@ -35,6 +35,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/drivebase_test?schema=public"
+      REDIS_HOST: "localhost"
+      REDIS_PORT: "6379"
+      JWT_SECRET: "ci_super_secret_jwt_key_32_characters_long!!"
+      JWT_REFRESH_SECRET: "ci_super_secret_jwt_refresh_key_32_chars!!"
+      ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -51,8 +61,11 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Push Database Schema
+        run: npx prisma db push --skip-generate
+
       - name: Check TypeScript Compilation
         run: npm run build
 
-      - name: Run Tests
+      - name: Run Production CI Test Suite
         run: npm test
