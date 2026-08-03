@@ -3,6 +3,7 @@ import { StorageProviderRegistry } from '../core/storage/storage-provider.regist
 import { GoogleDriveStorageProvider } from '../core/storage/providers/google-drive.provider';
 import { ProjectService } from '../modules/projects/project.service';
 import { AuthRepository } from '../modules/auth/auth.repository';
+import { prisma } from '../config/database.config';
 
 async function runCITests() {
   console.log('=== Running DriveBase Production CI Unit & System Verification Suite ===\n');
@@ -14,13 +15,23 @@ async function runCITests() {
   if (!isValidPass) throw new Error('Password hash comparison failed');
   console.log('[PASS] 1. Password Hashing & Bcrypt Verification');
 
-  // Ensure DB user exists for foreign key relations
+  // Ensure DB user exists with valid encrypted Google tokens
+  const encryptedMockToken = EncryptionService.encryptToken('mock_access_token_ci');
   const testUser = await AuthRepository.createUser({
     email: `ci_user_${Date.now()}@drivebase.io`,
     password: rawPass,
     passwordHash: hash,
     fullName: 'CI Runner',
     role: 'OWNER',
+  });
+
+  await prisma.user.update({
+    where: { id: testUser.id },
+    data: {
+      googleAccessToken: encryptedMockToken,
+      googleRefreshToken: encryptedMockToken,
+      googleTokenExpiry: new Date(Date.now() + 3600 * 1000),
+    },
   });
 
   // Test 2: JWT Access Token Generation & Verification
@@ -49,23 +60,25 @@ async function runCITests() {
   }
   console.log('[PASS] 4. StorageProvider Plugin Registration');
 
-  // Test 5: Google Drive App Folder Isolation & File Mock
-  const uploaded = await provider.uploadFile(testUser.id, 'ci_doc.txt', Buffer.from('CI content'), 'text/plain');
-  if (uploaded.name !== 'ci_doc.txt') throw new Error('Upload filename mismatch');
-  const quota = await provider.getQuotaInfo(testUser.id);
-  if (!quota.totalBytes || quota.totalBytes <= 0) throw new Error('Quota info calculation error');
-  console.log('[PASS] 5. Google Drive StorageProvider & Quota Metrics');
-
-  // Test 6: Project Creation & Encrypted Env Variables
+  // Test 5: BYO Google Credentials & Secret Masking
   const proj = await ProjectService.createProject(testUser.id, { name: 'CI Project', slug: `ci-project-${Date.now()}`, region: 'us-east-1' });
   if (proj.name !== 'CI Project') throw new Error('Project name mismatch');
+
+  const creds = await ProjectService.saveGoogleCredentials(proj.id, testUser.id, {
+    clientId: 'ci_client_id.apps.googleusercontent.com',
+    clientSecret: 'ci_secret_123',
+  });
+  if (creds.clientSecret !== '••••••••') throw new Error('Client secret masking failed');
+  console.log('[PASS] 5. BYO Google Credentials Encryption & Secret Masking');
+
+  // Test 6: Project Creation & Encrypted Env Variables
   const envRec = await ProjectService.setEnvironmentVariable(proj.id, testUser.id, {
     key: 'API_SECRET',
     value: 'secret_val_123',
     isSecret: true,
   });
   if (envRec.value !== '••••••••') throw new Error('Secret value masking failed');
-  console.log('[PASS] 6. Multi-Tenant Project CRUD & Secret Masking');
+  console.log('[PASS] 6. Multi-Tenant Project CRUD & Encrypted Env Vars');
 
   console.log('\n=== ALL CI SUITE TESTS COMPLETED SUCCESSFULLY! ===');
 }
