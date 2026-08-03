@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc && npx copyfiles -u 1 public/**/* dist/public",
-    "vercel-build": "prisma generate && tsc",
+    "vercel-build": "prisma generate && tsc && npx copyfiles -u 1 public/**/* dist/public",
     "postinstall": "prisma generate",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
