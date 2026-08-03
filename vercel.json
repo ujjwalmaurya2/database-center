@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "buildCommand": "npx prisma generate && tsc",
+  "outputDirectory": "public",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/ready",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/metrics",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/api-docs",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
+}
