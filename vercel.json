@@ -2,70 +2,84 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     },
     {
-      "source": "/auth",
-      "destination": "/auth.html"
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "/api/index.ts"
     },
     {
-      "source": "/database",
-      "destination": "/database.html"
+      "src": "/health",
+      "dest": "/api/index.ts"
     },
     {
-      "source": "/storage",
-      "destination": "/storage.html"
+      "src": "/ready",
+      "dest": "/api/index.ts"
     },
     {
-      "source": "/functions",
-      "destination": "/functions.html"
+      "src": "/metrics",
+      "dest": "/api/index.ts"
     },
     {
-      "source": "/api-docs",
-      "destination": "/api.html"
+      "src": "/api-docs",
+      "dest": "/public/api.html"
     },
     {
-      "source": "/sync",
-      "destination": "/sync.html"
+      "src": "/auth",
+      "dest": "/public/auth.html"
     },
     {
-      "source": "/conflicts",
-      "destination": "/conflicts.html"
+      "src": "/dashboard",
+      "dest": "/public/index.html"
     },
     {
-      "source": "/recovery",
-      "destination": "/recovery.html"
+      "src": "/database",
+      "dest": "/public/database.html"
     },
     {
-      "source": "/realtime",
-      "destination": "/realtime.html"
+      "src": "/storage",
+      "dest": "/public/storage.html"
     },
     {
-      "source": "/settings",
-      "destination": "/settings.html"
+      "src": "/functions",
+      "dest": "/public/functions.html"
     },
     {
-      "source": "/logs",
-      "destination": "/logs.html"
+      "src": "/sync",
+      "dest": "/public/sync.html"
     },
     {
-      "source": "/api/v1/(.*)",
-      "destination": "/api/index.ts"
+      "src": "/conflicts",
+      "dest": "/public/conflicts.html"
     },
     {
-      "source": "/health",
-      "destination": "/api/index.ts"
+      "src": "/recovery",
+      "dest": "/public/recovery.html"
     },
     {
-      "source": "/ready",
-      "destination": "/api/index.ts"
+      "src": "/realtime",
+      "dest": "/public/realtime.html"
     },
     {
-      "source": "/metrics",
-      "destination": "/api/index.ts"
+      "src": "/settings",
+      "dest": "/public/settings.html"
+    },
+    {
+      "src": "/logs",
+      "dest": "/public/logs.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
     }
   ]
 }

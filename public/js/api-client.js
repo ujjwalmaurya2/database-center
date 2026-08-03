@@ -1,6 +1,11 @@
-// DriveBase Central API Client with JWT Persistence & Route Protection
+// DriveBase Central API Client with Dynamic Production BaseURL & Resilience
 class DriveBaseAPI {
-  static baseUrl = '/api/v1';
+  static get baseUrl() {
+    if (typeof window !== 'undefined' && window.location) {
+      return `${window.location.origin}/api/v1`;
+    }
+    return '/api/v1';
+  }
 
   static getAccessToken() {
     return localStorage.getItem('drivebase_access_token');
@@ -41,11 +46,12 @@ class DriveBaseAPI {
 
   static requireAuth() {
     const token = this.getAccessToken();
-    if (!token) {
-      const currentPath = window.location.pathname;
-      if (!currentPath.endsWith('auth.html')) {
-        window.location.href = 'auth.html';
-      }
+    const path = (window.location.pathname || '').toLowerCase();
+    const isAuthPage = path.endsWith('auth.html') || path.endsWith('/auth');
+    
+    if (!token && !isAuthPage) {
+      console.warn('[DriveBase Auth] No access token found. Redirecting to auth page.');
+      window.location.href = 'auth.html';
       return false;
     }
     return true;
@@ -66,7 +72,6 @@ class DriveBaseAPI {
     const token = this.getAccessToken();
     const activeProject = this.getActiveProjectId();
     
-    // Automatically attach Bearer Authorization token & x-project-id header
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -80,24 +85,30 @@ class DriveBaseAPI {
         headers,
       });
 
-      const data = await response.json();
-      
-      // If 401 Unauthorized occurs on protected routes, clear session & redirect to login
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        data = { error: { message: 'Invalid server response' } };
+      }
+
+      // ONLY handle explicit 401 Unauthorized for true invalid/expired tokens (do NOT redirect on 500, 502, 503, 504, 404, or network glitches)
       if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
-        console.warn(`[DriveBase API] 401 Unauthorized on ${endpoint}. Session expired.`);
+        console.warn(`[DriveBase API] 401 Unauthorized on ${endpoint}. Session token expired.`);
         this.clearSession();
-        if (!window.location.pathname.endsWith('auth.html')) {
+        const path = (window.location.pathname || '').toLowerCase();
+        if (!path.endsWith('auth.html') && !path.endsWith('/auth')) {
           window.location.href = 'auth.html';
         }
         throw new Error('Session expired. Please log in again.');
       }
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'API request failed');
+        throw new Error(data.error?.message || `API request failed with status ${response.status}`);
       }
       return data;
     } catch (error) {
-      console.error(`[DriveBase API Error] ${endpoint}:`, error);
+      console.error(`[DriveBase API Network Note] ${endpoint}:`, error.message);
       throw error;
     }
   }
