@@ -1,31 +1,39 @@
 {
   "version": 2,
-  "buildCommand": "npx prisma generate && tsc",
-  "outputDirectory": "public",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     },
     {
-      "source": "/health",
-      "destination": "/api/index.ts"
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/ready",
-      "destination": "/api/index.ts"
+      "src": "/health",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/metrics",
-      "destination": "/api/index.ts"
+      "src": "/ready",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/api-docs",
-      "destination": "/api/index.ts"
+      "src": "/metrics",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "src": "/api-docs",
+      "dest": "api/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "public/$1"
     }
   ]
 }
