@@ -1,9 +1,58 @@
 {
   "version": 2,
-  "outputDirectory": "public",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/auth",
+      "destination": "/auth.html"
+    },
+    {
+      "source": "/database",
+      "destination": "/database.html"
+    },
+    {
+      "source": "/storage",
+      "destination": "/storage.html"
+    },
+    {
+      "source": "/functions",
+      "destination": "/functions.html"
+    },
+    {
+      "source": "/api-docs",
+      "destination": "/api.html"
+    },
+    {
+      "source": "/sync",
+      "destination": "/sync.html"
+    },
+    {
+      "source": "/conflicts",
+      "destination": "/conflicts.html"
+    },
+    {
+      "source": "/recovery",
+      "destination": "/recovery.html"
+    },
+    {
+      "source": "/realtime",
+      "destination": "/realtime.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/settings.html"
+    },
+    {
+      "source": "/logs",
+      "destination": "/logs.html"
+    },
+    {
+      "source": "/api/v1/(.*)",
       "destination": "/api/index.ts"
     },
     {
@@ -16,10 +65,6 @@
     },
     {
       "source": "/metrics",
-      "destination": "/api/index.ts"
-    },
-    {
-      "source": "/api-docs",
       "destination": "/api/index.ts"
     }
   ]
