@@ -36,20 +36,30 @@
   </div>
 </div>
 
+<!-- API Key Configuration Banner (Hidden by default, shown if GCP keys missing) -->
+<div id="gcpConfigWarning" class="hidden p-4 rounded-xl bg-yellow-950/40 border border-yellow-700/50 text-yellow-300 space-y-2">
+  <div class="flex items-center gap-2 font-bold text-sm">
+    <span class="material-symbols-outlined text-yellow-400">warning</span> Missing Google Cloud Credentials in .env
+  </div>
+  <p class="text-xs text-yellow-200/90">
+    Please set <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">GOOGLE_CLIENT_ID</code> and <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">GOOGLE_CLIENT_SECRET</code> in your server's <code class="font-mono bg-black/40 px-1.5 py-0.5 rounded">.env</code> file to enable Google Drive OAuth and file storage operations.
+  </p>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 <!-- Connection Status Card -->
 <div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
   <span class="text-xs text-on-surface-variant uppercase">Google Drive Connection</span>
-  <h3 id="driveConnStatus" class="text-lg font-bold text-emerald-400">Connected</h3>
-  <p id="driveConnUser" class="text-xs text-on-surface-variant font-mono">owner@drivebase.io</p>
+  <h3 id="driveConnStatus" class="text-lg font-bold text-yellow-400">Disconnected</h3>
+  <p id="driveConnUser" class="text-xs text-on-surface-variant font-mono">Not connected</p>
 </div>
 
 <!-- Storage Quota Gauge -->
 <div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
   <span class="text-xs text-on-surface-variant uppercase">Total Space Used</span>
-  <h3 id="driveQuotaUsed" class="text-lg font-bold text-on-surface">6.2 GB / 15.0 GB</h3>
+  <h3 id="driveQuotaUsed" class="text-lg font-bold text-on-surface">-- / --</h3>
   <div class="w-full bg-surface border border-outline-variant rounded-full h-2 overflow-hidden">
-    <div id="driveQuotaBar" class="h-full bg-indigo-500" style="width: 41%"></div>
+    <div id="driveQuotaBar" class="h-full bg-indigo-500" style="width: 0%"></div>
   </div>
 </div>
 
@@ -66,7 +76,7 @@
   <span class="material-symbols-outlined text-4xl text-indigo-400">cloud_upload</span>
   <div>
     <h4 class="font-bold text-sm text-on-surface">Click or Drag &amp; Drop Files to Upload</h4>
-    <p class="text-xs text-on-surface-variant">Files will be streamed directly into your Google Drive <code class="text-indigo-400 font-mono">DriveBase-App/</code> directory</p>
+    <p class="text-xs text-on-surface-variant">Files will be uploaded via <code class="text-indigo-400 font-mono">multipart/form-data</code> into your Google Drive <code class="text-indigo-400 font-mono">DriveBase-App/</code> directory</p>
   </div>
   <input type="file" id="fileInput" class="hidden"/>
   <button type="button" onclick="document.getElementById('fileInput').click()" class="px-4 py-2 bg-surface border border-outline-variant rounded text-xs text-on-surface hover:bg-surface-variant transition">Select Local File</button>
@@ -87,13 +97,8 @@
         </tr>
       </thead>
       <tbody id="filesTableBody">
-        <tr class="border-b border-outline-variant/20">
-          <td class="py-3 px-3 text-indigo-300 font-bold">users.json</td>
-          <td class="py-3 px-3 text-on-surface-variant">/tables/users.json</td>
-          <td class="py-3 px-3 text-on-surface">2.0 KB</td>
-          <td class="py-3 px-3 text-right">
-            <button onclick="deleteStoredFile('gdrive_file_1')" class="text-red-400 hover:underline">Delete</button>
-          </td>
+        <tr>
+          <td colspan="4" class="py-4 text-center text-on-surface-variant">No uploaded files. Click or drop a file above to upload.</td>
         </tr>
       </tbody>
     </table>
@@ -110,7 +115,17 @@
 
   function handleConnectDrive(e) {
     e.preventDefault();
-    window.location.href = DriveBaseAPI.getGoogleAuthUrl();
+    try {
+      window.location.href = DriveBaseAPI.getGoogleAuthUrl();
+    } catch(err) {
+      showErrorBanner(err.message);
+    }
+  }
+
+  function showErrorBanner(msg) {
+    const banner = document.getElementById('gcpConfigWarning');
+    banner.classList.remove('hidden');
+    banner.querySelector('p').innerText = msg;
   }
 
   async function loadStorageOverview() {
@@ -118,7 +133,8 @@
       const statusRes = await DriveBaseAPI.getGoogleStatus();
       if (statusRes.data) {
         document.getElementById('driveConnStatus').innerText = statusRes.data.connected ? 'Connected' : 'Disconnected';
-        document.getElementById('driveConnUser').innerText = statusRes.data.userEmail || 'owner@drivebase.io';
+        document.getElementById('driveConnStatus').className = `text-lg font-bold ${statusRes.data.connected ? 'text-emerald-400' : 'text-yellow-400'}`;
+        document.getElementById('driveConnUser').innerText = statusRes.data.connected ? (statusRes.data.userEmail || 'Connected User') : 'Not connected';
       }
 
       const quotaRes = await DriveBaseAPI.getStorageQuota();
@@ -130,28 +146,39 @@
         document.getElementById('driveQuotaBar').style.width = pct + '%';
       }
     } catch(e) {
-      console.warn('Storage overview error:', e.message);
+      if (e.message && e.message.includes('Missing Google Cloud Credentials')) {
+        showErrorBanner(e.message);
+      } else {
+        console.warn('Storage overview note:', e.message);
+      }
     }
   }
 
   async function handleFileSelect(file) {
     const alert = document.getElementById('uploadAlert');
-    alert.className = 'p-3 text-xs rounded-lg bg-indigo-900/40 text-indigo-300 border border-indigo-500/30';
-    alert.innerText = `⏳ Uploading '${file.name}' to Google Drive app folder...`;
+    alert.className = 'p-3 text-xs rounded-lg bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 flex items-center gap-2';
+    alert.innerHTML = `
+      <div class="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+      <span>Uploading '${file.name}' via multipart/form-data to Google Drive...</span>
+    `;
     alert.classList.remove('hidden');
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const res = await DriveBaseAPI.uploadFile(file.name, file.type, arrayBuffer);
+      const res = await DriveBaseAPI.uploadFileFormData(file);
       alert.className = 'p-3 text-xs rounded-lg bg-emerald-900/40 text-emerald-300 border border-emerald-500/30';
       alert.innerText = `✓ Successfully uploaded '${file.name}' to DriveBase-App folder!`;
       
-      storedFilesList.push(res.data);
-      renderFilesTable();
+      if (res.data) {
+        storedFilesList.push(res.data);
+        renderFilesTable();
+      }
       loadStorageOverview();
     } catch(err) {
       alert.className = 'p-3 text-xs rounded-lg bg-red-900/40 text-red-300 border border-red-500/30';
       alert.innerText = `✕ Upload failed: ${err.message}`;
+      if (err.message && err.message.includes('Missing Google Cloud Credentials')) {
+        showErrorBanner(err.message);
+      }
     }
   }
 
@@ -194,6 +221,16 @@
       alert('Delete failed: ' + e.message);
     }
   }
+
+  // Setup Drag and Drop
+  const dropzone = document.getElementById('dropzone');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-indigo-500'); });
+  dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('border-indigo-500'); });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('border-indigo-500');
+    if (e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]);
+  });
 
   document.getElementById('fileInput').addEventListener('change', (e) => {
     if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);

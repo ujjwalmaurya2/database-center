@@ -154,19 +154,33 @@ class DriveBaseAPI {
     return this.request('/storage/quota', { method: 'GET' });
   }
 
-  static async uploadFile(fileName, mimeType, arrayBuffer) {
+  // Multipart/Form-Data File Upload with Bearer JWT Authorization
+  static async uploadFileFormData(file) {
     const token = this.getAccessToken();
+    const activeProject = this.getActiveProjectId();
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
     const res = await fetch(`${this.baseUrl}/storage/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': mimeType || 'application/octet-stream',
-        'X-File-Name': encodeURIComponent(fileName),
-        'X-File-Type': mimeType || 'application/octet-stream',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(activeProject ? { 'x-project-id': activeProject } : {}),
       },
-      body: arrayBuffer,
+      body: formData,
     });
-    return res.json();
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error?.message || 'File upload failed');
+    }
+    return data;
+  }
+
+  static async uploadFile(fileName, mimeType, arrayBuffer) {
+    const blob = new Blob([arrayBuffer], { type: mimeType });
+    const file = new File([blob], fileName, { type: mimeType });
+    return this.uploadFileFormData(file);
   }
 
   static async renameFile(id, newName) {

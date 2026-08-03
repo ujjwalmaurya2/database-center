@@ -5,15 +5,18 @@ import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 const googleProvider = new GoogleDriveStorageProvider();
 
 export class GoogleAuthController {
-  public static async initiateAuth(req: Request, res: Response): Promise<void> {
-    const authUrl = googleProvider.getAuthUrl();
-    res.redirect(authUrl);
+  public static async initiateAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const authUrl = googleProvider.getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      next(error);
+    }
   }
 
   public static async handleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const code = (req.query.code as string) || 'mock_oauth_code_success';
-      // Fallback userId if not authenticated via session cookie
+      const code = (req.query.code as string) || '';
       const userId = (req as AuthenticatedRequest).user?.id || 'usr_demo_1';
 
       await googleProvider.connect({ code, userId });
