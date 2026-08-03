@@ -9,7 +9,9 @@ import { setupSwagger } from './config/swagger.config';
 import { StorageProviderRegistry } from './core/storage/storage-provider.registry';
 import { GoogleDriveStorageProvider } from './core/storage/providers/google-drive.provider';
 import authRouter from './modules/auth/auth.router';
+import googleAuthRouter from './modules/auth/auth.google.router';
 import projectRouter from './modules/projects/project.router';
+import storageRouter from './modules/storage/storage.router';
 import healthRouter from './modules/health/health.router';
 
 // Initialize Storage Providers Plugin System
@@ -33,7 +35,9 @@ app.use('/', healthRouter);
 // Register API v1 Routers
 const apiRouter = express.Router();
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/auth', googleAuthRouter);
 apiRouter.use('/projects', projectRouter);
+apiRouter.use('/storage', storageRouter);
 
 app.use(envConfig.apiPrefix, apiRouter);
 

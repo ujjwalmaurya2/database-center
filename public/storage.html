@@ -22,16 +22,175 @@
 <li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
 </ul>
 </nav>
-<main class="flex-1 p-6 space-y-6">
-<h2 class="text-2xl font-bold">Google Drive StorageProvider</h2>
-<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
-<h3 class="font-bold text-lg">Active Provider Plugin: GoogleDriveStorageProvider</h3>
-<p class="text-sm text-on-surface-variant">DriveBase uses an extensible <code class="text-indigo-400 font-mono">StorageProvider</code> abstraction. User files are stored directly in their own Google Drive account under the hidden app directory while storage metadata is tracked in PostgreSQL.</p>
-<div class="p-4 bg-black rounded border border-outline-variant space-y-2 font-mono text-xs text-emerald-400">
-<p>✓ StorageProvider Interface: Active</p>
-<p>✓ Token Encryption: AES-256-GCM Enabled</p>
-<p>✓ Fallback Extension Ready: S3StorageProvider, DropboxStorageProvider, R2StorageProvider</p>
+
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <div>
+    <h2 class="text-2xl font-bold">Google Drive StorageProvider</h2>
+    <p class="text-xs text-on-surface-variant mt-1">Isolated Application Folder: <code class="text-indigo-400 font-mono">DriveBase-App/</code></p>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="/api/v1/auth/google" id="connectDriveBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-xs hover:bg-indigo-500 transition flex items-center gap-2">
+      <span class="material-symbols-outlined text-[16px]">cloud_sync</span> Connect Google Drive
+    </a>
+  </div>
 </div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Connection Status Card -->
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
+  <span class="text-xs text-on-surface-variant uppercase">Google Drive Connection</span>
+  <h3 id="driveConnStatus" class="text-lg font-bold text-emerald-400">Connected</h3>
+  <p id="driveConnUser" class="text-xs text-on-surface-variant font-mono">owner@drivebase.io</p>
+</div>
+
+<!-- Storage Quota Gauge -->
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
+  <span class="text-xs text-on-surface-variant uppercase">Total Space Used</span>
+  <h3 id="driveQuotaUsed" class="text-lg font-bold text-on-surface">6.2 GB / 15.0 GB</h3>
+  <div class="w-full bg-surface border border-outline-variant rounded-full h-2 overflow-hidden">
+    <div id="driveQuotaBar" class="h-full bg-indigo-500" style="width: 41%"></div>
+  </div>
+</div>
+
+<!-- Provider Plugin Card -->
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
+  <span class="text-xs text-on-surface-variant uppercase">Active Storage Plugin</span>
+  <h3 class="text-lg font-bold text-indigo-300">GoogleDriveStorageProvider</h3>
+  <p class="text-xs text-emerald-400 font-mono">AES-256 Tokens Encrypted</p>
+</div>
+</div>
+
+<!-- File Upload Dropzone -->
+<div class="p-6 rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant hover:border-indigo-500 transition space-y-3 text-center cursor-pointer" id="dropzone">
+  <span class="material-symbols-outlined text-4xl text-indigo-400">cloud_upload</span>
+  <div>
+    <h4 class="font-bold text-sm text-on-surface">Click or Drag &amp; Drop Files to Upload</h4>
+    <p class="text-xs text-on-surface-variant">Files will be streamed directly into your Google Drive <code class="text-indigo-400 font-mono">DriveBase-App/</code> directory</p>
+  </div>
+  <input type="file" id="fileInput" class="hidden"/>
+  <button type="button" onclick="document.getElementById('fileInput').click()" class="px-4 py-2 bg-surface border border-outline-variant rounded text-xs text-on-surface hover:bg-surface-variant transition">Select Local File</button>
+</div>
+<div id="uploadAlert" class="hidden p-3 text-xs rounded-lg"></div>
+
+<!-- Uploaded Files Table -->
+<div class="p-6 rounded-xl bg-surface-container-low border border-outline-variant space-y-4">
+  <h3 class="font-bold text-sm text-on-surface">Files Stored in DriveBase-App</h3>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs font-mono">
+      <thead>
+        <tr class="text-on-surface-variant border-b border-outline-variant/40">
+          <th class="py-2 px-3">FILE NAME</th>
+          <th class="py-2 px-3">PATH</th>
+          <th class="py-2 px-3">SIZE</th>
+          <th class="py-2 px-3 text-right">ACTION</th>
+        </tr>
+      </thead>
+      <tbody id="filesTableBody">
+        <tr class="border-b border-outline-variant/20">
+          <td class="py-3 px-3 text-indigo-300 font-bold">users.json</td>
+          <td class="py-3 px-3 text-on-surface-variant">/tables/users.json</td>
+          <td class="py-3 px-3 text-on-surface">2.0 KB</td>
+          <td class="py-3 px-3 text-right">
+            <button onclick="deleteStoredFile('gdrive_file_1')" class="text-red-400 hover:underline">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 </main>
+
+<script src="js/api-client.js"></script>
+<script>
+  let storedFilesList = [];
+
+  async function loadStorageOverview() {
+    try {
+      const statusRes = await DriveBaseAPI.getGoogleStatus();
+      if (statusRes.data) {
+        document.getElementById('driveConnStatus').innerText = statusRes.data.connected ? 'Connected' : 'Disconnected';
+        document.getElementById('driveConnUser').innerText = statusRes.data.userEmail || 'owner@drivebase.io';
+      }
+
+      const quotaRes = await DriveBaseAPI.getStorageQuota();
+      if (quotaRes.data) {
+        const usedGB = (quotaRes.data.usedBytes / (1024 * 1024 * 1024)).toFixed(2);
+        const totalGB = (quotaRes.data.totalBytes / (1024 * 1024 * 1024)).toFixed(2);
+        const pct = Math.min(100, Math.round((quotaRes.data.usedBytes / quotaRes.data.totalBytes) * 100));
+        document.getElementById('driveQuotaUsed').innerText = `${usedGB} GB / ${totalGB} GB`;
+        document.getElementById('driveQuotaBar').style.width = pct + '%';
+      }
+    } catch(e) {
+      console.warn('Storage overview loaded in mock mode');
+    }
+  }
+
+  async function handleFileSelect(file) {
+    const alert = document.getElementById('uploadAlert');
+    alert.className = 'p-3 text-xs rounded-lg bg-indigo-900/40 text-indigo-300 border border-indigo-500/30';
+    alert.innerText = `⏳ Uploading '${file.name}' to Google Drive app folder...`;
+    alert.classList.remove('hidden');
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const res = await DriveBaseAPI.uploadFile(file.name, file.type, arrayBuffer);
+      alert.className = 'p-3 text-xs rounded-lg bg-emerald-900/40 text-emerald-300 border border-emerald-500/30';
+      alert.innerText = `✓ Successfully uploaded '${file.name}' to DriveBase-App folder!`;
+      
+      storedFilesList.push(res.data);
+      renderFilesTable();
+      loadStorageOverview();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded-lg bg-red-900/40 text-red-300 border border-red-500/30';
+      alert.innerText = `✕ Upload failed: ${err.message}`;
+    }
+  }
+
+  function renderFilesTable() {
+    const tbody = document.getElementById('filesTableBody');
+    if (storedFilesList.length === 0) return;
+    tbody.innerHTML = storedFilesList.map(item => `
+      <tr class="border-b border-outline-variant/20 hover:bg-surface-variant/20">
+        <td class="py-3 px-3 text-indigo-300 font-bold">${item.name}</td>
+        <td class="py-3 px-3 text-on-surface-variant">${item.path}</td>
+        <td class="py-3 px-3 text-on-surface">${(item.size / 1024).toFixed(1)} KB</td>
+        <td class="py-3 px-3 text-right">
+          <button onclick="renameStoredFile('${item.id}')" class="text-indigo-400 hover:underline mr-3">Rename</button>
+          <button onclick="deleteStoredFile('${item.id}')" class="text-red-400 hover:underline">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function renameStoredFile(fileId) {
+    const newName = prompt('Enter new filename:');
+    if (!newName) return;
+    try {
+      await DriveBaseAPI.renameFile(fileId, newName);
+      const item = storedFilesList.find(f => f.id === fileId);
+      if (item) item.name = newName;
+      renderFilesTable();
+    } catch(e) {
+      alert('Rename failed: ' + e.message);
+    }
+  }
+
+  async function deleteStoredFile(fileId) {
+    if (!confirm('Delete file from Google Drive?')) return;
+    try {
+      await DriveBaseAPI.deleteFile(fileId);
+      storedFilesList = storedFilesList.filter(f => f.id !== fileId);
+      renderFilesTable();
+    } catch(e) {
+      alert('Delete failed: ' + e.message);
+    }
+  }
+
+  document.getElementById('fileInput').addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+  });
+
+  document.addEventListener('DOMContentLoaded', loadStorageOverview);
+</script>
 </body></html>

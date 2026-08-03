@@ -86,6 +86,50 @@ class DriveBaseAPI {
     }
   }
 
+  // Google OAuth & Connection Methods
+  static async getGoogleStatus() {
+    return this.request('/auth/google/status', { method: 'GET' });
+  }
+
+  static async disconnectGoogle() {
+    return this.request('/auth/google/disconnect', { method: 'POST' });
+  }
+
+  // StorageProvider Methods
+  static async getStorageStatus() {
+    return this.request('/storage/status', { method: 'GET' });
+  }
+
+  static async getStorageQuota() {
+    return this.request('/storage/quota', { method: 'GET' });
+  }
+
+  static async uploadFile(fileName, mimeType, arrayBuffer) {
+    const token = this.getAccessToken();
+    const res = await fetch(`${this.baseUrl}/storage/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': mimeType || 'application/octet-stream',
+        'X-File-Name': encodeURIComponent(fileName),
+        'X-File-Type': mimeType || 'application/octet-stream',
+      },
+      body: arrayBuffer,
+    });
+    return res.json();
+  }
+
+  static async renameFile(id, newName) {
+    return this.request(`/storage/files/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ newName }),
+    });
+  }
+
+  static async deleteFile(id) {
+    return this.request(`/storage/files/${id}`, { method: 'DELETE' });
+  }
+
   // Projects Methods
   static async getProjects() {
     return this.request('/projects', { method: 'GET' });
