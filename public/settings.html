@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DriveBase - Project Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
+</head>
+<body class="bg-background text-on-surface font-sans flex min-h-screen">
+<nav class="w-64 bg-surface-container-low border-r border-outline-variant p-4 space-y-4">
+<h1 class="text-xl font-bold">DriveBase</h1>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a href="index.html" class="block p-2 hover:bg-surface-variant rounded">Dashboard</a></li>
+<li><a href="auth.html" class="block p-2 hover:bg-surface-variant rounded">Auth</a></li>
+<li><a href="database.html" class="block p-2 hover:bg-surface-variant rounded">Database</a></li>
+<li><a href="storage.html" class="block p-2 hover:bg-surface-variant rounded">Storage</a></li>
+<li><a href="functions.html" class="block p-2 hover:bg-surface-variant rounded">API &amp; Functions</a></li>
+<li><a href="sync.html" class="block p-2 hover:bg-surface-variant rounded">Sync Engine</a></li>
+<li><a href="conflicts.html" class="block p-2 hover:bg-surface-variant rounded">Conflicts</a></li>
+<li><a href="recovery.html" class="block p-2 hover:bg-surface-variant rounded">Recovery Center</a></li>
+<li><a href="settings.html" class="block p-2 bg-primary-container text-white rounded font-bold">Settings</a></li>
+<li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
+</ul>
+</nav>
+
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<h2 class="text-2xl font-bold">Project Settings &amp; Secrets Management</h2>
+
+<!-- Project Details Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+<h3 class="font-bold text-lg text-on-surface">General Project Configuration</h3>
+<form id="projectDetailsForm" class="space-y-4">
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Project Name</label>
+  <input id="projName" type="text" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface" required/>
+</div>
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Project Description</label>
+  <textarea id="projDesc" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface" rows="2"></textarea>
+</div>
+<button type="submit" class="px-4 py-2 bg-primary-container text-white rounded font-semibold text-sm hover:bg-primary-container/80 transition">Save Changes</button>
+</form>
+<div id="detailsAlert" class="hidden p-3 text-xs rounded"></div>
+</div>
+
+<!-- Environment Variables & Secrets Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+<div class="flex justify-between items-center">
+  <div>
+    <h3 class="font-bold text-lg text-on-surface">Environment Variables &amp; Secrets</h3>
+    <p class="text-xs text-on-surface-variant">Encrypted in PostgreSQL using AES-256-GCM prior to storage.</p>
+  </div>
+</div>
+
+<form id="addEnvForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-surface p-4 rounded-lg border border-outline-variant/40">
+  <input id="envKey" type="text" placeholder="KEY (e.g. STRIPE_SECRET)" class="bg-surface-container-low border border-outline-variant rounded px-3 py-2 text-sm text-on-surface font-mono" required/>
+  <input id="envValue" type="text" placeholder="Value string" class="bg-surface-container-low border border-outline-variant rounded px-3 py-2 text-sm text-on-surface" required/>
+  <label class="flex items-center gap-2 text-xs text-on-surface cursor-pointer">
+    <input id="envSecret" type="checkbox" class="rounded bg-surface-container-low border-outline-variant text-primary focus:ring-0"/>
+    Encrypt as Secret
+  </label>
+  <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded font-semibold text-sm hover:bg-emerald-500 transition">Set Variable</button>
+</form>
+<div id="envAlert" class="hidden p-3 text-xs rounded"></div>
+
+<div class="overflow-x-auto pt-2">
+<table class="w-full text-left text-xs font-mono">
+<thead>
+<tr class="text-on-surface-variant border-b border-outline-variant/40">
+  <th class="py-2 px-3">KEY</th>
+  <th class="py-2 px-3">VALUE</th>
+  <th class="py-2 px-3">ENCRYPTION</th>
+  <th class="py-2 px-3 text-right">ACTION</th>
+</tr>
+</thead>
+<tbody id="envTableBody">
+  <tr><td colspan="4" class="py-4 text-center text-on-surface-variant">Loading environment variables...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Danger Zone -->
+<div class="bg-red-950/20 p-6 rounded-xl border border-red-800/40 space-y-4">
+<h3 class="font-bold text-lg text-red-400">Danger Zone</h3>
+<p class="text-xs text-on-surface-variant">Archiving a project soft-deletes its configuration while preserving audit logs.</p>
+<button id="archiveProjBtn" class="px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded font-semibold text-sm transition">Archive Project</button>
+</div>
+</main>
+
+<script src="js/api-client.js"></script>
+<script>
+  let currentProjId = 'proj_alpha_1';
+
+  async function loadProjectDetails() {
+    try {
+      const projects = await DriveBaseAPI.getProjects();
+      if (projects.data && projects.data.length > 0) {
+        const proj = projects.data[0];
+        currentProjId = proj.id;
+        document.getElementById('projName').value = proj.name;
+        document.getElementById('projDesc').value = proj.description || '';
+        loadEnvVars();
+      }
+    } catch(e) {
+      console.warn('Using default project context');
+      loadEnvVars();
+    }
+  }
+
+  async function loadEnvVars() {
+    const tbody = document.getElementById('envTableBody');
+    try {
+      const res = await DriveBaseAPI.getEnvVars(currentProjId);
+      if (!res.data || res.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-on-surface-variant">No environment variables configured yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = res.data.map(item => `
+        <tr class="border-b border-outline-variant/20 hover:bg-surface-variant/20">
+          <td class="py-2 px-3 text-indigo-300 font-bold">${item.key}</td>
+          <td class="py-2 px-3 ${item.isSecret ? 'text-yellow-400' : 'text-on-surface'}">${item.value}</td>
+          <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${item.isSecret ? 'bg-yellow-900/40 text-yellow-300' : 'bg-surface-variant text-on-surface-variant'}">${item.isSecret ? 'AES-256-GCM' : 'Plaintext'}</span></td>
+          <td class="py-2 px-3 text-right">
+            <button onclick="deleteEnv('${item.key}')" class="text-red-400 hover:underline">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-400">Failed to load environment variables</td></tr>`;
+    }
+  }
+
+  async function deleteEnv(key) {
+    if (!confirm(`Delete ${key}?`)) return;
+    try {
+      await DriveBaseAPI.deleteEnvVar(currentProjId, key);
+      loadEnvVars();
+    } catch(e) {
+      alert('Delete failed: ' + e.message);
+    }
+  }
+
+  document.getElementById('projectDetailsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('projName').value;
+    const desc = document.getElementById('projDesc').value;
+    const alert = document.getElementById('detailsAlert');
+    try {
+      await DriveBaseAPI.updateProject(currentProjId, { name, description: desc });
+      alert.className = 'p-3 text-xs rounded bg-emerald-900/40 text-emerald-300';
+      alert.innerText = '✓ Project configuration updated!';
+      alert.classList.remove('hidden');
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded bg-red-900/40 text-red-300';
+      alert.innerText = err.message;
+      alert.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('addEnvForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const key = document.getElementById('envKey').value;
+    const value = document.getElementById('envValue').value;
+    const isSecret = document.getElementById('envSecret').checked;
+    const alert = document.getElementById('envAlert');
+    try {
+      await DriveBaseAPI.setEnvVar(currentProjId, key, value, isSecret);
+      alert.className = 'p-3 text-xs rounded bg-emerald-900/40 text-emerald-300';
+      alert.innerText = `✓ Variable '${key}' saved!`;
+      alert.classList.remove('hidden');
+      document.getElementById('envKey').value = '';
+      document.getElementById('envValue').value = '';
+      document.getElementById('envSecret').checked = false;
+      loadEnvVars();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded bg-red-900/40 text-red-300';
+      alert.innerText = err.message;
+      alert.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('archiveProjBtn').addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to archive this project?')) return;
+    try {
+      await DriveBaseAPI.archiveProject(currentProjId);
+      alert('Project archived successfully!');
+      loadProjectDetails();
+    } catch(e) {
+      alert('Archive failed: ' + e.message);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', loadProjectDetails);
+</script>
+</body></html>

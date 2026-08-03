@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum StorageStatus {
+  SYNCED
+  PENDING
+  CONFLICT
+  DELETED
+}
+
+enum SyncOperation {
+  UPLOAD
+  DOWNLOAD
+  DELETE
+  RENAME
+  MOVE
+}
+
+enum SyncStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  email              String         @unique
+  passwordHash       String
+  fullName           String
+  role               Role           @default(OWNER)
+  googleId           String?        @unique
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+  avatarUrl          String?
+  isEmailVerified    Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  refreshTokens      RefreshToken[]
+  projects           Project[]      @relation("UserProjects")
+  logs               LogEntry[]
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  status      String   @default("active")
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner           User              @relation("UserProjects", fields: [ownerId], references: [id], onDelete: Cascade)
+  envVars         ProjectEnvVar[]
+  storageFiles    StorageMetadata[]
+  syncQueues      SyncQueue[]
+  conflicts       Conflict[]
+  recoveryPoints  RecoveryPoint[]
+  functions       EdgeFunction[]
+  apiKeys         ApiKey[]
+  logs            LogEntry[]
+  notifications   Notification[]
+
+  @@map("projects")
+}
+
+model ProjectEnvVar {
+  id        String   @id @default(uuid())
+  projectId String
+  key       String
+  value     String
+  isSecret  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+  @@map("project_env_vars")
+}
+
+model StorageMetadata {
+  id           String        @id @default(uuid())
+  googleFileId String?
+  projectId    String
+  ownerId      String
+  path         String
+  name         String
+  isFolder     Boolean       @default(false)
+  version      Int           @default(1)
+  checksum     String?
+  mimeType     String?
+  fileSize     BigInt        @default(0)
+  visibility   String        @default("private")
+  status       StorageStatus @default(SYNCED)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path])
+  @@map("storage_metadata")
+}
+
+model SyncQueue {
+  id         String        @id @default(uuid())
+  projectId  String
+  fileId     String?
+  operation  SyncOperation
+  status     SyncStatus    @default(QUEUED)
+  retryCount Int           @default(0)
+  lastError  String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("sync_queue")
+}
+
+model Conflict {
+  id                 String   @id @default(uuid())
+  projectId          String
+  filePath           String
+  localHash          String?
+  driveHash          String?
+  conflictType       String
+  status             String   @default("unresolved")
+  resolutionStrategy String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("conflicts")
+}
+
+model RecoveryPoint {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  manifest  Json
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("recovery_points")
+}
+
+model EdgeFunction {
+  id              String   @id @default(uuid())
+  projectId       String
+  name            String
+  routePath       String
+  code            String
+  language        String   @default("typescript")
+  status          String   @default("deployed")
+  invocationCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@map("edge_functions")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  projectId  String
+  name       String
+  keyHash    String    @unique
+  role       Role      @default(ADMIN)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model LogEntry {
+  id        String   @id @default(uuid())
+  projectId String?
+  userId    String?
+  level     String   @default("INFO")
+  service   String
+  event     String
+  resource  String?
+  details   Json?
+  ipAddress String?
+  timestamp DateTime @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("log_entries")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  projectId String?
+  title     String
+  message   String
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  timestamp DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}

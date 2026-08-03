@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>DriveBase Milestone 1 - Live Links & Quick Shortcuts</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#031427] text-[#d3e4fe] font-sans p-10 min-h-screen">
+<div class="max-w-2xl mx-auto space-y-6">
+  <div class="border-b border-[#26364a] pb-4">
+    <h1 class="text-3xl font-bold text-[#c3c0ff]">DriveBase Milestone 1 - Live Endpoints</h1>
+    <p class="text-sm text-[#c7c4d8] mt-1">Click any link below while the server is running on port 3000.</p>
+  </div>
+  
+  <div class="grid grid-cols-1 gap-4">
+    <a href="http://localhost:3000/index.html" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Dashboard UI</h3>
+        <p class="text-xs text-[#c7c4d8]">Main system status, bento grid &amp; activity feed</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/index.html &rarr;</span>
+    </a>
+
+    <a href="http://localhost:3000/auth.html" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Auth &amp; User Management</h3>
+        <p class="text-xs text-[#c7c4d8]">Email registration, JWT sign in, and RBAC profile</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/auth.html &rarr;</span>
+    </a>
+
+    <a href="http://localhost:3000/api-docs" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Interactive Swagger API Docs</h3>
+        <p class="text-xs text-[#c7c4d8]">Auto-generated OpenAPI specification UI</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/api-docs &rarr;</span>
+    </a>
+
+    <a href="http://localhost:3000/health" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Health Check Endpoint</h3>
+        <p class="text-xs text-[#c7c4d8]">Application uptime &amp; timestamp probe</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/health &rarr;</span>
+    </a>
+
+    <a href="http://localhost:3000/ready" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Readiness Check Endpoint</h3>
+        <p class="text-xs text-[#c7c4d8]">PostgreSQL database &amp; Redis connectivity check</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/ready &rarr;</span>
+    </a>
+
+    <a href="http://localhost:3000/metrics" target="_blank" class="p-4 rounded-xl bg-[#0b1c30] border border-[#464555] hover:border-[#4f46e5] flex justify-between items-center transition">
+      <div>
+        <h3 class="font-bold text-[#d3e4fe]">Prometheus Metrics Exporter</h3>
+        <p class="text-xs text-[#c7c4d8]">Process, latency, and auth request metrics</p>
+      </div>
+      <span class="text-xs font-mono text-[#4edea3]">http://localhost:3000/metrics &rarr;</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>

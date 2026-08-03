@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DriveBase - API & Docs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
+</head>
+<body class="bg-background text-on-surface font-sans flex min-h-screen">
+<nav class="w-64 bg-surface-container-low border-r border-outline-variant p-4 space-y-4">
+<h1 class="text-xl font-bold">DriveBase</h1>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a href="index.html" class="block p-2 hover:bg-surface-variant rounded">Dashboard</a></li>
+<li><a href="auth.html" class="block p-2 hover:bg-surface-variant rounded">Auth</a></li>
+<li><a href="database.html" class="block p-2 hover:bg-surface-variant rounded">Database</a></li>
+<li><a href="storage.html" class="block p-2 hover:bg-surface-variant rounded">Storage</a></li>
+<li><a href="api.html" class="block p-2 bg-primary-container text-white rounded font-bold">API &amp; Docs</a></li>
+<li><a href="sync.html" class="block p-2 hover:bg-surface-variant rounded">Sync Engine</a></li>
+<li><a href="conflicts.html" class="block p-2 hover:bg-surface-variant rounded">Conflicts</a></li>
+<li><a href="recovery.html" class="block p-2 hover:bg-surface-variant rounded">Recovery Center</a></li>
+<li><a href="settings.html" class="block p-2 hover:bg-surface-variant rounded">Settings</a></li>
+<li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
+</ul>
+</nav>
+<main class="flex-1 p-6 space-y-6">
+<h2 class="text-2xl font-bold">REST API &amp; Swagger Documentation</h2>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+<p class="text-sm text-on-surface-variant">OpenAPI interactive documentation is generated automatically and accessible at:</p>
+<a href="/api-docs" target="_blank" class="inline-block px-4 py-2 bg-primary-container text-white font-semibold rounded hover:bg-primary-container/80 transition">Launch Swagger UI (/api-docs)</a>
+<div class="pt-4 border-t border-outline-variant space-y-2 font-mono text-xs">
+<p class="text-emerald-400">GET /health - System health status</p>
+<p class="text-emerald-400">GET /ready - DB &amp; Redis readiness probe</p>
+<p class="text-emerald-400">GET /metrics - Prometheus exporter</p>
+<p class="text-indigo-300">POST /api/v1/auth/register - Register user account</p>
+<p class="text-indigo-300">POST /api/v1/auth/login - Email &amp; Password sign-in</p>
+<p class="text-indigo-300">POST /api/v1/auth/refresh - Refresh access token</p>
+<p class="text-indigo-300">GET /api/v1/auth/me - Authenticated user profile</p>
+</div>
+</div>
+</main>
+</body></html>

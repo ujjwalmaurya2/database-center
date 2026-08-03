@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DriveBase - Sync Engine</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
+</head>
+<body class="bg-background text-on-surface font-sans flex min-h-screen">
+<nav class="w-64 bg-surface-container-low border-r border-outline-variant p-4 space-y-4">
+<h1 class="text-xl font-bold">DriveBase</h1>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a href="index.html" class="block p-2 hover:bg-surface-variant rounded">Dashboard</a></li>
+<li><a href="auth.html" class="block p-2 hover:bg-surface-variant rounded">Auth</a></li>
+<li><a href="database.html" class="block p-2 hover:bg-surface-variant rounded">Database</a></li>
+<li><a href="storage.html" class="block p-2 hover:bg-surface-variant rounded">Storage</a></li>
+<li><a href="functions.html" class="block p-2 hover:bg-surface-variant rounded">API &amp; Functions</a></li>
+<li><a href="sync.html" class="block p-2 bg-primary-container text-white rounded font-bold">Sync Engine</a></li>
+<li><a href="conflicts.html" class="block p-2 hover:bg-surface-variant rounded">Conflicts</a></li>
+<li><a href="recovery.html" class="block p-2 hover:bg-surface-variant rounded">Recovery Center</a></li>
+<li><a href="settings.html" class="block p-2 hover:bg-surface-variant rounded">Settings</a></li>
+<li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
+</ul>
+</nav>
+<main class="flex-1 p-6 space-y-6">
+<h2 class="text-2xl font-bold">Synchronization Queue &amp; Engine</h2>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+<p class="text-sm text-on-surface-variant">Sync engine queue managed via PostgreSQL <code class="text-indigo-300 font-mono">sync_queue</code> table and Redis pub/sub:</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">QUEUED JOBS</span><span class="text-xl font-bold text-emerald-400">0</span></div>
+<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">IN PROGRESS</span><span class="text-xl font-bold text-indigo-400">0</span></div>
+<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">RETRY QUEUE</span><span class="text-xl font-bold text-yellow-400">0</span></div>
+</div>
+</div>
+</main>
+</body></html>

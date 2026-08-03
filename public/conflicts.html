@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DriveBase - Conflict Detection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#d3e4fe",
+                        "secondary": "#bec6e0",
+                        "surface": "#031427",
+                        "primary-container": "#4f46e5",
+                        "primary": "#c3c0ff",
+                        "tertiary": "#4edea3",
+                        "background": "#031427",
+                        "outline-variant": "#464555",
+                        "surface-container-low": "#0b1c30",
+                        "on-surface-variant": "#c7c4d8"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<nav class="hidden md:flex flex-col p-4 space-y-2 w-[260px] h-screen sticky left-0 top-0 border-r border-outline-variant bg-surface flex-shrink-0 z-40">
+<div class="flex items-center gap-2 mb-6 px-1">
+<span class="material-symbols-outlined text-primary text-2xl">difference</span>
+<div>
+<h1 class="font-headline-sm text-lg font-bold text-on-surface">DriveBase</h1>
+<p class="text-xs text-on-surface-variant">v1.0.0-milestone1</p>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="index.html"><span class="material-symbols-outlined">dashboard</span>Overview</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="auth.html"><span class="material-symbols-outlined">lock</span>Auth</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="database.html"><span class="material-symbols-outlined">database</span>Database</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="storage.html"><span class="material-symbols-outlined">cloud_done</span>Storage</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-medium" href="conflicts.html"><span class="material-symbols-outlined">difference</span>Conflicts</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="logs.html"><span class="material-symbols-outlined">terminal</span>Logs</a>
+</div>
+</nav>
+
+<div class="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden">
+<header class="flex justify-between items-center h-14 px-6 sticky top-0 z-50 bg-surface/80 border-b border-outline-variant">
+<h2 class="font-headline-md text-lg text-on-surface font-bold">Conflict Resolution Engine</h2>
+<span class="text-xs text-tertiary">Conflict schema ready</span>
+</header>
+
+<main class="flex-1 overflow-y-auto p-6 space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+<p class="text-xs text-on-surface-variant uppercase">Active Conflicts</p>
+<h3 class="text-3xl font-bold text-on-surface mt-2">0</h3>
+<span class="text-xs text-tertiary">All files synchronized</span>
+</div>
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+<p class="text-xs text-on-surface-variant uppercase">Resolution Strategy</p>
+<h3 class="text-3xl font-bold text-on-surface mt-2">Prisma &amp; Redis</h3>
+<span class="text-xs text-on-surface-variant">Checksum &amp; version tracking</span>
+</div>
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+<p class="text-xs text-on-surface-variant uppercase">Storage Provider</p>
+<h3 class="text-3xl font-bold text-on-surface mt-2">Google Drive</h3>
+<span class="text-xs text-tertiary">StorageProvider Interface Active</span>
+</div>
+</div>
+</main>
+</div>
+</body>
+</html>

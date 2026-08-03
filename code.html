@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DriveBase - Conflict Detection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#d3e4fe",
+                        "secondary": "#bec6e0",
+                        "inverse-surface": "#d3e4fe",
+                        "secondary-fixed": "#dae2fd",
+                        "on-tertiary-fixed": "#002113",
+                        "inverse-on-surface": "#213145",
+                        "on-tertiary-container": "#67f4b7",
+                        "on-error-container": "#ffdad6",
+                        "surface": "#031427",
+                        "surface-tint": "#c3c0ff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-primary": "#1d00a5",
+                        "surface-container-low": "#0b1c30",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container-highest": "#26364a",
+                        "outline-variant": "#464555",
+                        "on-primary-fixed": "#0f0069",
+                        "on-background": "#d3e4fe",
+                        "tertiary-container": "#006e4b",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "primary-fixed": "#e2dfff",
+                        "secondary-container": "#3f465c",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#000f21",
+                        "primary": "#c3c0ff",
+                        "on-secondary-container": "#adb4ce",
+                        "on-error": "#690005",
+                        "tertiary": "#4edea3",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-tertiary": "#003824",
+                        "surface-container": "#102034",
+                        "on-secondary": "#283044",
+                        "surface-container-high": "#1b2b3f",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-variant": "#26364a",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-dim": "#031427",
+                        "primary-container": "#4f46e5",
+                        "inverse-primary": "#4d44e3",
+                        "background": "#031427",
+                        "outline": "#918fa1",
+                        "on-surface-variant": "#c7c4d8",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-bright": "#2a3a4f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "0.25rem",
+                        "gutter": "1.5rem",
+                        "base": "4px",
+                        "container-max": "1440px",
+                        "xl": "2.5rem",
+                        "md": "1rem",
+                        "sm": "0.5rem",
+                        "lg": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "label-sm": ["Inter"],
+                        "headline-sm": ["Geist"],
+                        "body-lg": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-md-mobile": ["Geist"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["30px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "code-md": ["13px", { "lineHeight": "1.6", "fontWeight": "450" }],
+                        "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-md-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-surface {
+            background-color: rgba(38, 54, 74, 0.4); /* surface-container-highest with opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(70, 69, 85, 0.5); /* outline-variant */
+        }
+        
+        /* Custom scrollbar for high-density areas */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #26364a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f465c;
+        }
+        
+        .code-container {
+            background-color: #000000;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col p-md space-y-xs w-[260px] h-screen sticky left-0 top-0 border-r border-outline-variant bg-surface dark:bg-surface flex-shrink-0 z-40">
+<div class="flex items-center gap-sm mb-lg px-xs py-sm">
+<img class="w-8 h-8 rounded object-cover" data-alt="A minimalist, geometric logo for a database service called DriveBase. The logo should feature interconnected technical nodes in white and deep indigo against a dark background, evoking precision and cloud infrastructure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv2WMcAN4tQzUW3dt6HLrYUalk2Ne5VCYhbZlDlN7QkDCVWo65ACliXXAYNb6xyN_vmwRult_RvIOJc1qhOFbYeJB33TDcPANvX3NPUxlDj9V-elfLS_RuQiIVH7l3NuclzphuLgJonc1Vyw-wmztlCEEMnwS3YWfqx7So-1alebtY45VVQhpTWxED7W3ZHVDw-1yvdPgLfi5sP8z2PD41QUKKahCewQ3DbGDwZOEnbJvGOE92Mxbv2Q"/>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-surface">DriveBase</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Production Cluster</p>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-xs py-sm bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary rounded-lg transition-colors mb-md shadow-[0_0_15px_rgba(79,70,229,0.2)]">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm font-bold">New Project</span>
+</button>
+<div class="flex-1 space-y-xs font-body-md text-body-md">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+                Overview
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">folder_open</span>
+                Projects
+            </a>
+<!-- Active State: Database (Assuming Conflict Detection falls under DB sync) -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-secondary-container text-on-secondary-container font-medium active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">database</span>
+                Database
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">cloud_done</span>
+                Storage
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">terminal</span>
+                Logs
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+                Settings
+            </a>
+</div>
+<div class="mt-auto space-y-xs pt-md border-t border-outline-variant font-body-md text-body-md">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+                Documentation
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-14 px-gutter w-full sticky top-0 z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant">
+<div class="flex items-center gap-lg">
+<div class="md:hidden font-headline-sm text-headline-sm font-bold text-primary">DriveBase</div>
+<div class="hidden md:flex items-center bg-surface-container-low border border-outline-variant rounded-full px-sm py-xs focus-within:ring-1 focus-within:ring-primary w-64 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] ml-xs">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-full text-on-surface placeholder-on-surface-variant/50 py-0" placeholder="Search conflicts, files, or nodes..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<nav class="hidden lg:flex items-center gap-md mr-md">
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-opacity" href="#">Feedback</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-opacity" href="#">Status</a>
+<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface transition-opacity" href="#">Docs</a>
+</nav>
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant hover:border-primary transition-colors">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a software developer in a dark studio setting with subtle blue rim lighting, looking focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo-3t8tNYcya88_yjsDJwKPb7annbLerqgmw1p8z6V32ESa3qEY9YP9JCeZE24Mlw6l0TXxmnvOwRNMlZD2hmbhc2-KkWKgZ3C0DAcD5-1hoitiyLMLWCfOM8wJYMssLsMgdgvGvA1ImE6KecmCNADZw7WWPdMYusWZRX-Cfo7vvGO3sUCFGxoOCEQFU2TPPsOlgt70Gy6O3IMK0pmkgKidDtMUYX2rcF6Dmhjf1GmcnELnWNzmb1jYw"/>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-4 md:p-lg space-y-lg pb-24 md:pb-lg">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div>
+<h2 class="font-headline-md text-headline-md-mobile md:text-headline-md text-on-surface">Conflict Resolution</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Manage synchronization conflicts between Local Node and Google Drive.</p>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-sm rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-sm text-label-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">history</span>
+                        Resolution History
+                    </button>
+<button class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-colors font-label-sm text-label-sm font-medium flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                        Force Sync All
+                    </button>
+</div>
+</div>
+<!-- Stats Dashboard (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="glass-surface p-md rounded-xl flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 p-sm opacity-20">
+<span class="material-symbols-outlined text-[48px] text-error">warning</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Active Conflicts</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mt-xs">24</h3>
+</div>
+<div class="flex items-center gap-xs mt-md">
+<span class="px-xs py-1 rounded bg-error-container/20 text-error font-code-md text-code-md border border-error-container/30">
+                            +12 since last sync
+                        </span>
+</div>
+</div>
+<div class="glass-surface p-md rounded-xl flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 p-sm opacity-20">
+<span class="material-symbols-outlined text-[48px] text-tertiary">check_circle</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Resolution Rate</p>
+<h3 class="font-display-lg text-display-lg text-on-surface mt-xs">87%</h3>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1 mt-md overflow-hidden">
+<div class="bg-tertiary h-1.5 rounded-full" style="width: 87%"></div>
+</div>
+</div>
+<div class="glass-surface p-md rounded-xl flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 p-sm opacity-20">
+<span class="material-symbols-outlined text-[48px] text-primary">priority</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Avg Severity</p>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-xs">Medium-High</h3>
+</div>
+<div class="flex gap-sm mt-md font-label-sm text-label-sm">
+<div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-error"></span> 5 High</div>
+<div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-primary-container"></span> 14 Med</div>
+<div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-surface-variant border border-outline"></span> 5 Low</div>
+</div>
+</div>
+</div>
+<!-- Main Conflict Workspace -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-md h-[600px]">
+<!-- Conflict List -->
+<div class="lg:col-span-4 glass-surface rounded-xl flex flex-col overflow-hidden border border-outline-variant">
+<div class="p-sm border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h4 class="font-headline-sm text-headline-sm text-on-surface text-[16px]">Conflict Queue</h4>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">filter_list</span></button>
+</div>
+<div class="flex-1 overflow-y-auto p-xs space-y-xs">
+<!-- Active Item -->
+<div class="p-sm rounded-lg bg-secondary-container/50 border border-primary-container/30 cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center gap-xs text-on-surface font-body-md text-body-md truncate">
+<span class="material-symbols-outlined text-[16px] text-error">difference</span>
+<span class="truncate font-code-md">config_prod.json</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-error/10 text-error font-label-sm text-[10px] uppercase border border-error/20">Mismatch</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Modified on both Local and Drive</p>
+<p class="font-code-md text-[10px] text-on-surface-variant/60 mt-2">2 mins ago</p>
+</div>
+<!-- Inactive Items -->
+<div class="p-sm rounded-lg hover:bg-surface-container-high border border-transparent transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center gap-xs text-on-surface font-body-md text-body-md truncate">
+<span class="material-symbols-outlined text-[16px] text-tertiary">delete</span>
+<span class="truncate font-code-md">api_routes_v2.ts</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-[10px] uppercase border border-outline-variant">Deleted</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Deleted locally, modified on Drive</p>
+<p class="font-code-md text-[10px] text-on-surface-variant/60 mt-2">14 mins ago</p>
+</div>
+<div class="p-sm rounded-lg hover:bg-surface-container-high border border-transparent transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center gap-xs text-on-surface font-body-md text-body-md truncate">
+<span class="material-symbols-outlined text-[16px] text-primary">maps_ar</span>
+<span class="truncate font-code-md">auth_controller.go</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-container font-label-sm text-[10px] uppercase border border-primary-container/30">Moved</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant truncate">Path conflict detected</p>
+<p class="font-code-md text-[10px] text-on-surface-variant/60 mt-2">1 hr ago</p>
+</div>
+</div>
+</div>
+<!-- Version Comparison Viewer -->
+<div class="lg:col-span-8 flex flex-col gap-md">
+<!-- Metadata Header -->
+<div class="glass-surface p-md rounded-xl flex justify-between items-center border border-outline-variant">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-sm">
+<span class="font-code-md">config_prod.json</span>
+</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Path: /var/www/drivebase/config/</p>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-sm text-label-sm flex items-center gap-xs">
+                                Duplicate
+                            </button>
+<button class="px-md py-sm rounded-lg bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-colors font-label-sm text-label-sm flex items-center gap-xs border border-outline-variant">
+                                Merge Interactively
+                            </button>
+</div>
+</div>
+<!-- Side-by-Side Diff -->
+<div class="flex-1 glass-surface rounded-xl overflow-hidden border border-outline-variant flex flex-col md:flex-row">
+<!-- Local Version -->
+<div class="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-outline-variant">
+<div class="p-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-on-surface">
+<span class="material-symbols-outlined text-[18px]">computer</span>
+<span class="font-label-sm text-label-sm font-bold">Local Node</span>
+</div>
+<span class="font-code-md text-code-md text-on-surface-variant/60 text-[11px]">Today, 14:32</span>
+</div>
+<div class="flex-1 code-container p-md overflow-auto font-code-md text-code-md text-on-surface-variant">
+<pre><code>{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+<span class="bg-error/20 text-error-container block w-full">-   "max_connections": 100,</span>
+<span class="bg-error/20 text-error-container block w-full">-   "ssl_mode": "disable"</span>
+  },
+  "logging": {
+    "level": "debug"
+  }
+}</code></pre>
+</div>
+<div class="p-sm border-t border-outline-variant bg-surface-container-low">
+<button class="w-full py-2 rounded border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-sm text-label-sm">
+                                    Keep Local
+                                </button>
+</div>
+</div>
+<!-- Drive Version -->
+<div class="flex-1 flex flex-col">
+<div class="p-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-xs text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-[#4285F4]">cloud</span>
+<span class="font-label-sm text-label-sm font-bold">Google Drive</span>
+</div>
+<span class="font-code-md text-code-md text-on-surface-variant/60 text-[11px]">Today, 14:30</span>
+</div>
+<div class="flex-1 code-container p-md overflow-auto font-code-md text-code-md text-on-surface-variant">
+<pre><code>{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+<span class="bg-tertiary/20 text-tertiary-fixed-dim block w-full">+   "max_connections": 250,</span>
+<span class="bg-tertiary/20 text-tertiary-fixed-dim block w-full">+   "ssl_mode": "require"</span>
+  },
+  "logging": {
+    "level": "info"
+  }
+}</code></pre>
+</div>
+<div class="p-sm border-t border-outline-variant bg-surface-container-low">
+<button class="w-full py-2 rounded bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-colors font-label-sm text-label-sm">
+                                    Keep Drive Version
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

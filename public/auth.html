@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DriveBase - Auth Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&amp;family=Inter:wght@400..600&amp;family=JetBrains+Mono:wght@400..500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface": "#031427",
+                      "surface-container-low": "#0b1c30",
+                      "surface-variant": "#26364a",
+                      "primary": "#c3c0ff",
+                      "primary-container": "#4f46e5",
+                      "on-primary-container": "#dad7ff",
+                      "on-surface": "#d3e4fe",
+                      "on-surface-variant": "#c7c4d8",
+                      "tertiary": "#4edea3",
+                      "outline-variant": "#464555",
+                      "background": "#031427"
+              },
+              "borderRadius": {
+                      "lg": "0.5rem",
+                      "xl": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline-sm": ["Geist"],
+                      "body-md": ["Inter"],
+                      "code-md": ["JetBrains Mono"]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+  .spinner {
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex flex-col md:flex-row antialiased">
+<nav class="hidden md:flex flex-col h-full py-4 px-3 bg-surface-container-low border-r border-surface-variant fixed left-0 top-0 h-screen w-64 z-40">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded-md bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-lg">database</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-[20px] font-black text-on-surface">DriveBase</h1>
+<p class="text-[12px] text-on-surface-variant">v1.0.0-production</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto">
+<ul class="space-y-1">
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="index.html"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="text-[12px]">Dashboard</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 bg-primary-container text-on-primary-container rounded-lg font-semibold" href="auth.html"><span class="material-symbols-outlined text-[18px]">lock</span><span class="text-[12px]">Auth</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="database.html"><span class="material-symbols-outlined text-[18px]">database</span><span class="text-[12px]">Database</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="storage.html"><span class="material-symbols-outlined text-[18px]">folder</span><span class="text-[12px]">Storage</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="functions.html"><span class="material-symbols-outlined text-[18px]">api</span><span class="text-[12px]">API &amp; Functions</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="sync.html"><span class="material-symbols-outlined text-[18px]">sync</span><span class="text-[12px]">Sync Engine</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="conflicts.html"><span class="material-symbols-outlined text-[18px]">difference</span><span class="text-[12px]">Conflict Detection</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="recovery.html"><span class="material-symbols-outlined text-[18px]">restore</span><span class="text-[12px]">Recovery Center</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="settings.html"><span class="material-symbols-outlined text-[18px]">settings</span><span class="text-[12px]">Settings</span></a></li>
+<li><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface rounded-lg" href="logs.html"><span class="material-symbols-outlined text-[18px]">list_alt</span><span class="text-[12px]">Logs</span></a></li>
+</ul>
+</div>
+</nav>
+
+<div class="flex-1 flex flex-col md:ml-64 w-full h-full overflow-hidden">
+<header class="bg-surface w-full sticky top-0 z-50 border-b border-surface-variant flex justify-between items-center h-16 px-6">
+<h1 class="font-headline-sm text-[20px] font-bold text-on-surface">Authentication &amp; User Management</h1>
+<div id="authStatusHeader" class="text-xs text-tertiary font-mono flex items-center gap-2">
+  <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+  <span>Session Active</span>
+</div>
+</header>
+
+<main class="flex-1 overflow-y-auto p-6 space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+<!-- Login Form Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-surface-variant space-y-4">
+<div class="flex justify-between items-center">
+  <h3 class="font-bold text-lg text-on-surface">Email Authentication Sign In</h3>
+  <span class="text-xs text-on-surface-variant">JWT Access &amp; Refresh Tokens</span>
+</div>
+
+<form id="loginForm" class="space-y-4" novalidate>
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Email Address</label>
+  <input id="loginEmail" type="email" value="demo@drivebase.io" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition" placeholder="you@domain.com" required/>
+  <p id="loginEmailErr" class="text-[11px] text-red-400 mt-1 hidden"></p>
+</div>
+
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Password</label>
+  <div class="relative">
+    <input id="loginPassword" type="password" value="password123" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 pr-10 text-sm text-on-surface focus:outline-none focus:border-primary transition" placeholder="••••••••" required/>
+    <button type="button" id="toggleLoginPass" class="absolute right-2 top-2 text-on-surface-variant hover:text-on-surface">
+      <span class="material-symbols-outlined text-[18px]">visibility</span>
+    </button>
+  </div>
+  <p id="loginPassErr" class="text-[11px] text-red-400 mt-1 hidden"></p>
+</div>
+
+<button type="submit" id="loginBtn" class="w-full bg-primary-container text-on-primary-container py-2.5 rounded-lg font-semibold text-sm hover:bg-primary-container/80 transition flex items-center justify-center gap-2 disabled:opacity-50">
+  <span id="loginSpinner" class="spinner hidden"></span>
+  <span id="loginBtnText">Sign In to Dashboard</span>
+</button>
+</form>
+
+<div id="loginAlert" class="hidden p-3 text-xs rounded-lg flex items-center gap-2"></div>
+</div>
+
+<!-- Register Form Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-surface-variant space-y-4">
+<div class="flex justify-between items-center">
+  <h3 class="font-bold text-lg text-on-surface">Create New Developer User</h3>
+  <span class="text-xs text-on-surface-variant">Multi-Role Support</span>
+</div>
+
+<form id="registerForm" class="space-y-4" novalidate>
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Full Name</label>
+  <input id="regName" type="text" placeholder="Jane Doe" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition" required/>
+  <p id="regNameErr" class="text-[11px] text-red-400 mt-1 hidden"></p>
+</div>
+
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Email Address</label>
+  <input id="regEmail" type="email" placeholder="jane@drivebase.io" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition" required/>
+  <p id="regEmailErr" class="text-[11px] text-red-400 mt-1 hidden"></p>
+</div>
+
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">Password (min 6 characters)</label>
+  <div class="relative">
+    <input id="regPassword" type="password" placeholder="••••••••" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 pr-10 text-sm text-on-surface focus:outline-none focus:border-primary transition" required/>
+    <button type="button" id="toggleRegPass" class="absolute right-2 top-2 text-on-surface-variant hover:text-on-surface">
+      <span class="material-symbols-outlined text-[18px]">visibility</span>
+    </button>
+  </div>
+  <div class="w-full bg-surface border border-outline-variant rounded-full h-1.5 mt-2 overflow-hidden">
+    <div id="passStrengthBar" class="h-full w-0 bg-red-400 transition-all"></div>
+  </div>
+  <p id="regPassErr" class="text-[11px] text-red-400 mt-1 hidden"></p>
+</div>
+
+<div>
+  <label class="block text-xs text-on-surface-variant mb-1">RBAC System Role</label>
+  <select id="regRole" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-sm text-on-surface focus:outline-none">
+    <option value="OWNER">OWNER - Full Cluster Control</option>
+    <option value="ADMIN">ADMIN - Project &amp; User Manager</option>
+    <option value="EDITOR">EDITOR - Content &amp; Storage Access</option>
+    <option value="VIEWER">VIEWER - Read-only Inspector</option>
+  </select>
+</div>
+
+<button type="submit" id="regBtn" class="w-full bg-primary text-on-primary py-2.5 rounded-lg font-semibold text-sm hover:bg-primary-fixed-dim transition flex items-center justify-center gap-2 disabled:opacity-50">
+  <span id="regSpinner" class="spinner hidden"></span>
+  <span id="regBtnText">Register User Account</span>
+</button>
+</form>
+
+<div id="registerAlert" class="hidden p-3 text-xs rounded-lg flex items-center gap-2"></div>
+</div>
+
+</div>
+
+<!-- Professional User Profile Card -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-surface-variant space-y-4">
+<div class="flex justify-between items-center">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container font-bold flex items-center justify-center" id="profileAvatar">
+      ?
+    </div>
+    <div>
+      <h3 class="font-bold text-lg text-on-surface" id="profileName">Anonymous User</h3>
+      <p class="text-xs text-on-surface-variant" id="profileEmail">Not authenticated</p>
+    </div>
+  </div>
+  <button id="logoutBtn" class="px-4 py-2 bg-surface-variant text-xs text-on-surface rounded-lg hover:bg-surface-variant/80 transition flex items-center gap-2">
+    <span class="material-symbols-outlined text-[16px]">logout</span> Sign Out
+  </button>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-surface-variant">
+  <div class="p-3 bg-surface rounded-lg border border-outline-variant/40">
+    <span class="text-[11px] text-on-surface-variant uppercase tracking-wider block">Assigned RBAC Role</span>
+    <span class="font-bold text-sm text-primary font-mono" id="profileRole">NONE</span>
+  </div>
+  <div class="p-3 bg-surface rounded-lg border border-outline-variant/40">
+    <span class="text-[11px] text-on-surface-variant uppercase tracking-wider block">Email Verification Status</span>
+    <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] bg-tertiary/10 text-tertiary font-mono" id="profileVerified">Verified</span>
+  </div>
+  <div class="p-3 bg-surface rounded-lg border border-outline-variant/40">
+    <span class="text-[11px] text-on-surface-variant uppercase tracking-wider block">Internal User ID</span>
+    <span class="font-mono text-xs text-on-surface truncate block" id="profileId">N/A</span>
+  </div>
+  <div class="p-3 bg-surface rounded-lg border border-outline-variant/40">
+    <span class="text-[11px] text-on-surface-variant uppercase tracking-wider block">Account Created Date</span>
+    <span class="font-mono text-xs text-on-surface" id="profileCreated">N/A</span>
+  </div>
+</div>
+</div>
+
+</main>
+</div>
+
+<script src="js/api-client.js"></script>
+<script>
+  // Show/Hide Password Toggle Logic
+  function setupPassToggle(inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(buttonId);
+    btn.addEventListener('click', () => {
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      btn.querySelector('.material-symbols-outlined').innerText = isPass ? 'visibility_off' : 'visibility';
+    });
+  }
+  setupPassToggle('loginPassword', 'toggleLoginPass');
+  setupPassToggle('regPassword', 'toggleRegPass');
+
+  // Password Strength Meter
+  document.getElementById('regPassword').addEventListener('input', (e) => {
+    const val = e.target.value;
+    const bar = document.getElementById('passStrengthBar');
+    if (!val) { bar.style.width = '0%'; return; }
+    let score = 0;
+    if (val.length >= 6) score += 33;
+    if (/[A-Z]/.test(val) || /[0-9]/.test(val)) score += 33;
+    if (/[^A-Za-z0-9]/.test(val) && val.length >= 8) score += 34;
+    bar.style.width = score + '%';
+    bar.className = `h-full transition-all ${score < 50 ? 'bg-red-400' : score < 80 ? 'bg-yellow-400' : 'bg-emerald-400'}`;
+  });
+
+  // Client-side Validation Helper
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  // Load User Profile Card
+  async function loadProfile() {
+    try {
+      const res = await DriveBaseAPI.getProfile();
+      const user = res.data;
+      document.getElementById('profileName').innerText = user.fullName || 'User';
+      document.getElementById('profileEmail').innerText = user.email;
+      document.getElementById('profileRole').innerText = user.role || 'OWNER';
+      document.getElementById('profileId').innerText = user.id;
+      document.getElementById('profileCreated').innerText = new Date(user.createdAt || Date.now()).toLocaleDateString();
+      document.getElementById('profileAvatar').innerText = (user.fullName || user.email)[0].toUpperCase();
+      document.getElementById('authStatusHeader').innerHTML = `<span class="w-2 h-2 rounded-full bg-tertiary"></span><span>Signed in as ${user.email} (${user.role})</span>`;
+    } catch(e) {
+      document.getElementById('profileName').innerText = 'Anonymous User';
+      document.getElementById('profileEmail').innerText = 'Not authenticated';
+      document.getElementById('profileRole').innerText = 'NONE';
+      document.getElementById('profileId').innerText = 'N/A';
+      document.getElementById('profileCreated').innerText = 'N/A';
+      document.getElementById('profileAvatar').innerText = '?';
+      document.getElementById('authStatusHeader').innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-400"></span><span>Anonymous Session</span>`;
+    }
+  }
+
+  // Handle Login Form Submission
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alert = document.getElementById('loginAlert');
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('loginSpinner');
+    const btnText = document.getElementById('loginBtnText');
+
+    if (!validateEmail(email)) {
+      document.getElementById('loginEmailErr').innerText = 'Please enter a valid email address';
+      document.getElementById('loginEmailErr').classList.remove('hidden');
+      return;
+    } else {
+      document.getElementById('loginEmailErr').classList.add('hidden');
+    }
+
+    alert.classList.add('hidden');
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.innerText = 'Authenticating...';
+
+    try {
+      await DriveBaseAPI.login(email, pass);
+      alert.className = 'p-3 text-xs rounded-lg bg-tertiary/20 text-tertiary border border-tertiary/30';
+      alert.innerText = '✓ Signed in successfully! Access token refreshed.';
+      alert.classList.remove('hidden');
+      await loadProfile();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded-lg bg-red-900/40 text-red-300 border border-red-500/30';
+      alert.innerText = `✕ Login Failed: ${err.message}`;
+      alert.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      btnText.innerText = 'Sign In to Dashboard';
+    }
+  });
+
+  // Handle Register Form Submission
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alert = document.getElementById('registerAlert');
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPassword').value;
+    const role = document.getElementById('regRole').value;
+    const btn = document.getElementById('regBtn');
+    const spinner = document.getElementById('regSpinner');
+    const btnText = document.getElementById('regBtnText');
+
+    let valid = true;
+    if (!name) { document.getElementById('regNameErr').innerText = 'Full name is required'; document.getElementById('regNameErr').classList.remove('hidden'); valid = false; } else { document.getElementById('regNameErr').classList.add('hidden'); }
+    if (!validateEmail(email)) { document.getElementById('regEmailErr').innerText = 'Invalid email address'; document.getElementById('regEmailErr').classList.remove('hidden'); valid = false; } else { document.getElementById('regEmailErr').classList.add('hidden'); }
+    if (pass.length < 6) { document.getElementById('regPassErr').innerText = 'Password must be at least 6 characters'; document.getElementById('regPassErr').classList.remove('hidden'); valid = false; } else { document.getElementById('regPassErr').classList.add('hidden'); }
+
+    if (!valid) return;
+
+    alert.classList.add('hidden');
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.innerText = 'Registering User...';
+
+    try {
+      await DriveBaseAPI.register(email, pass, name, role);
+      alert.className = 'p-3 text-xs rounded-lg bg-tertiary/20 text-tertiary border border-tertiary/30';
+      alert.innerText = '✓ User registered successfully! Session initialized.';
+      alert.classList.remove('hidden');
+      await loadProfile();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded-lg bg-red-900/40 text-red-300 border border-red-500/30';
+      alert.innerText = `✕ Registration Error: ${err.message}`;
+      alert.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      btnText.innerText = 'Register User Account';
+    }
+  });
+
+  // Handle Logout
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await DriveBaseAPI.logout();
+    await loadProfile();
+  });
+
+  document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>
