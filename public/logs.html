@@ -3,6 +3,7 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DriveBase - System Logs</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
 </head>
 <body class="bg-background text-on-surface font-sans flex min-h-screen">
@@ -21,16 +22,63 @@
 <li><a href="logs.html" class="block p-2 bg-primary-container text-white rounded font-bold">Logs</a></li>
 </ul>
 </nav>
-<main class="flex-1 p-6 space-y-6">
-<h2 class="text-2xl font-bold">Centralized Audit &amp; System Logs</h2>
-<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
-<div class="p-4 bg-black rounded font-mono text-xs text-on-surface space-y-1">
-<p class="text-emerald-400">[INFO] PostgreSQL Database Pool initialized successfully</p>
-<p class="text-emerald-400">[INFO] Redis Connection established</p>
-<p class="text-indigo-400">[INFO] StorageProvider registered: GoogleDriveStorageProvider</p>
-<p class="text-indigo-400">[INFO] OpenAPI Swagger docs mounted at /api-docs</p>
-<p class="text-emerald-400">[INFO] Prometheus Metrics exporter listening at /metrics</p>
+
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <h2 class="text-2xl font-bold">Centralized Audit &amp; System Logs</h2>
+  <span class="text-xs text-emerald-400 font-mono">PostgreSQL log_entries Table Active</span>
 </div>
+
+<!-- Logs Filter Bar -->
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant flex flex-wrap items-center justify-between gap-3 text-xs">
+  <div class="flex items-center gap-3">
+    <select id="logLevelSelect" onchange="loadLogs()" class="bg-surface border border-outline-variant rounded px-3 py-1.5 text-on-surface font-mono">
+      <option value="">ALL LEVELS</option>
+      <option value="INFO">INFO</option>
+      <option value="WARN">WARN</option>
+      <option value="ERROR">ERROR</option>
+    </select>
+    <input id="logSearchInput" type="text" oninput="loadLogs()" placeholder="Search logs (e.g. UPLOAD)..." class="bg-surface border border-outline-variant rounded px-3 py-1.5 text-on-surface font-mono w-64"/>
+  </div>
+  <button onclick="loadLogs()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold transition">Refresh Logs</button>
+</div>
+
+<!-- Logs Terminal Stream -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+  <div id="logsConsole" class="p-4 bg-black/90 rounded-lg font-mono text-xs text-on-surface space-y-2 overflow-x-auto max-h-[500px]">
+    <p class="text-on-surface-variant">Loading system logs stream...</p>
+  </div>
 </div>
 </main>
+
+<script src="js/api-client.js"></script>
+<script>
+  DriveBaseAPI.requireAuth();
+
+  async function loadLogs() {
+    const level = document.getElementById('logLevelSelect').value;
+    const search = document.getElementById('logSearchInput').value.trim();
+    const consoleEl = document.getElementById('logsConsole');
+
+    try {
+      const res = await DriveBaseAPI.getLogs(level, search);
+      if (res.data && res.data.length > 0) {
+        consoleEl.innerHTML = res.data.map(l => `
+          <div class="flex items-start gap-3 border-b border-white/5 pb-1">
+            <span class="text-on-surface-variant text-[11px]">${new Date(l.timestamp).toISOString()}</span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${l.level === 'ERROR' ? 'bg-red-950 text-red-300' : l.level === 'WARN' ? 'bg-yellow-950 text-yellow-300' : 'bg-emerald-950 text-emerald-300'}">${l.level}</span>
+            <span class="text-indigo-400 font-bold">[${l.service}]</span>
+            <span class="text-on-surface flex-1">${l.event} ${l.resource ? '- ' + l.resource : ''}</span>
+          </div>
+        `).join('');
+      } else {
+        consoleEl.innerHTML = `<p class="text-on-surface-variant">No matching log entries found.</p>`;
+      }
+    } catch(e) {
+      consoleEl.innerHTML = `<p class="text-red-400">Failed to load system logs.</p>`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadLogs);
+</script>
 </body></html>

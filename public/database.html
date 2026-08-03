@@ -22,24 +22,138 @@
 <li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
 </ul>
 </nav>
-<main class="flex-1 p-6 space-y-6">
-<h2 class="text-2xl font-bold">PostgreSQL Database Schema</h2>
-<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
-<p class="text-sm text-on-surface-variant">PostgreSQL database tables managed via Prisma ORM:</p>
-<ul class="list-disc list-inside text-sm font-mono space-y-1 text-emerald-400">
-<li>users (Auth, RBAC Roles, Encrypted Tokens)</li>
-<li>refresh_tokens (JWT Rotation)</li>
-<li>projects (Multi-tenant Projects)</li>
-<li>project_env_vars (Environment Variables &amp; Secrets)</li>
-<li>storage_metadata (Google Drive File ID Mappings)</li>
-<li>sync_queue (Sync Operation Queue)</li>
-<li>conflicts (File Versioning &amp; Path Conflicts)</li>
-<li>recovery_points (Snapshots &amp; Rollbacks)</li>
-<li>edge_functions (Serverless Code &amp; Routes)</li>
-<li>api_keys (Hashed Project API Keys)</li>
-<li>log_entries (Centralized Audit &amp; System Logs)</li>
-<li>notifications (Pub/Sub Notifications)</li>
-</ul>
+
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <h2 class="text-2xl font-bold">PostgreSQL Database Explorer</h2>
+  <span class="text-xs text-emerald-400 font-mono">Prisma ORM &amp; Raw SQL Runner Active</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+  <!-- Table Sidebar List -->
+  <div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant space-y-3">
+    <h3 class="font-bold text-sm text-on-surface">Tables Schema</h3>
+    <div id="tablesSidebar" class="space-y-1 font-mono text-xs">
+      <p class="text-on-surface-variant">Loading tables...</p>
+    </div>
+  </div>
+
+  <!-- Main View: Interactive Data Grid & SQL Console -->
+  <div class="lg:col-span-3 space-y-6">
+    <!-- Table Data Grid Card -->
+    <div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 id="tableTitle" class="font-bold text-sm text-indigo-300 font-mono">Table Data: users</h3>
+        <span id="tableRowsBadge" class="px-2.5 py-1 rounded text-xs font-mono bg-indigo-950 text-indigo-300 border border-indigo-800">Rows: 0</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead id="gridHead"></thead>
+          <tbody id="gridBody">
+            <tr><td class="py-4 text-center text-on-surface-variant">Select a table from the sidebar.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SQL Console Query Runner -->
+    <div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4 font-mono">
+      <h3 class="font-bold text-sm text-on-surface font-sans">Interactive SQL Query Console</h3>
+      <form id="sqlForm" class="space-y-3">
+        <textarea id="sqlInput" rows="3" class="w-full bg-black/70 border border-outline-variant rounded p-3 text-xs text-emerald-300 font-mono" required>SELECT * FROM "users" LIMIT 10;</textarea>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold text-xs transition">Run SQL Query</button>
+      </form>
+      <div id="sqlOutputPanel" class="hidden p-4 bg-black/60 rounded border border-indigo-500/40 space-y-2">
+        <div class="flex justify-between items-center text-[11px]">
+          <span class="text-indigo-300 font-bold">Query Execution Output</span>
+          <span id="sqlExecTime" class="text-emerald-400 font-bold">Time: 3ms</span>
+        </div>
+        <pre id="sqlJsonOutput" class="text-on-surface text-xs overflow-x-auto"></pre>
+      </div>
+    </div>
+  </div>
 </div>
 </main>
+
+<script src="js/api-client.js"></script>
+<script>
+  DriveBaseAPI.requireAuth();
+
+  let tablesList = [];
+  let selectedTableName = 'users';
+
+  async function loadTables() {
+    try {
+      const res = await DriveBaseAPI.getDbTables();
+      if (res.data) {
+        tablesList = res.data;
+        renderSidebar();
+        loadTableData(selectedTableName);
+      }
+    } catch(e) {
+      console.warn('DB tables load error:', e.message);
+    }
+  }
+
+  function renderSidebar() {
+    const sidebar = document.getElementById('tablesSidebar');
+    sidebar.innerHTML = tablesList.map(t => `
+      <div onclick="selectDbTable('${t.name}')" class="p-2 rounded cursor-pointer transition flex justify-between items-center ${selectedTableName === t.name ? 'bg-primary-container text-white font-bold' : 'hover:bg-surface-variant text-on-surface-variant'}">
+        <span>${t.name}</span>
+        <span class="text-[10px] opacity-70">${t.rowCount}</span>
+      </div>
+    `).join('');
+  }
+
+  function selectDbTable(name) {
+    selectedTableName = name;
+    renderSidebar();
+    loadTableData(name);
+    document.getElementById('sqlInput').value = `SELECT * FROM "${name}" LIMIT 10;`;
+  }
+
+  async function loadTableData(tableName) {
+    const thead = document.getElementById('gridHead');
+    const tbody = document.getElementById('gridBody');
+    document.getElementById('tableTitle').innerText = `Table Data: ${tableName}`;
+
+    try {
+      const res = await DriveBaseAPI.getDbTableData(tableName);
+      if (res.data && res.data.rows && res.data.rows.length > 0) {
+        const rows = res.data.rows;
+        document.getElementById('tableRowsBadge').innerText = `Rows: ${rows.length}`;
+        const cols = Object.keys(rows[0]);
+
+        thead.innerHTML = `<tr class="text-on-surface-variant border-b border-outline-variant/40">${cols.map(c => `<th class="py-2 px-3">${c.toUpperCase()}</th>`).join('')}</tr>`;
+        tbody.innerHTML = rows.map(r => `
+          <tr class="border-b border-outline-variant/20 hover:bg-surface-variant/20">
+            ${cols.map(c => `<td class="py-2 px-3 text-on-surface truncate max-w-[200px]">${typeof r[c] === 'object' ? JSON.stringify(r[c]) : r[c]}</td>`).join('')}
+          </tr>
+        `).join('');
+      } else {
+        document.getElementById('tableRowsBadge').innerText = `Rows: 0`;
+        thead.innerHTML = '';
+        tbody.innerHTML = `<tr><td class="py-4 text-center text-on-surface-variant">No rows in table.</td></tr>`;
+      }
+    } catch(e) {
+      tbody.innerHTML = `<tr><td class="py-4 text-center text-red-400">Error loading table data</td></tr>`;
+    }
+  }
+
+  document.getElementById('sqlForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sql = document.getElementById('sqlInput').value;
+    const panel = document.getElementById('sqlOutputPanel');
+    try {
+      const res = await DriveBaseAPI.executeDbQuery(sql);
+      panel.classList.remove('hidden');
+      document.getElementById('sqlExecTime').innerText = `Time: ${res.data.executionTimeMs}ms`;
+      document.getElementById('sqlJsonOutput').innerText = JSON.stringify(res.data.result, null, 2);
+    } catch(err) {
+      alert('SQL execution error: ' + err.message);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', loadTables);
+</script>
 </body></html>

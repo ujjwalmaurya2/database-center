@@ -66,7 +66,7 @@ class DriveBaseAPI {
     const token = this.getAccessToken();
     const activeProject = this.getActiveProjectId();
     
-    // Automatically attach Bearer Authorization token to all requests
+    // Automatically attach Bearer Authorization token & x-project-id header
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -176,7 +176,6 @@ class DriveBaseAPI {
     return this.request('/storage/quota', { method: 'GET' });
   }
 
-  // Multipart/Form-Data File Upload with Bearer JWT Authorization
   static async uploadFileFormData(file) {
     const token = this.getAccessToken();
     const activeProject = this.getActiveProjectId();
@@ -261,6 +260,147 @@ class DriveBaseAPI {
 
   static async deleteEnvVar(projectId, key) {
     return this.request(`/projects/${projectId}/env/${key}`, { method: 'DELETE' });
+  }
+
+  // Sync Engine Methods
+  static async getSyncStatus() {
+    return this.request('/sync/status', { method: 'GET' });
+  }
+
+  static async triggerSync() {
+    return this.request('/sync/trigger', { method: 'POST' });
+  }
+
+  static async pauseSync() {
+    return this.request('/sync/pause', { method: 'POST' });
+  }
+
+  static async resumeSync() {
+    return this.request('/sync/resume', { method: 'POST' });
+  }
+
+  static async retryFailedSync() {
+    return this.request('/sync/retry-failed', { method: 'POST' });
+  }
+
+  // Conflict Engine Methods
+  static async getConflicts() {
+    return this.request('/conflicts', { method: 'GET' });
+  }
+
+  static async getConflictDiff(id) {
+    return this.request(`/conflicts/${id}/diff`, { method: 'GET' });
+  }
+
+  static async resolveConflict(id, strategy) {
+    return this.request(`/conflicts/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ strategy }),
+    });
+  }
+
+  // Recovery & Snapshot Methods
+  static async getSnapshots() {
+    return this.request('/recovery/snapshots', { method: 'GET' });
+  }
+
+  static async createSnapshot(name) {
+    return this.request('/recovery/snapshots', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  static async rollbackSnapshot(id) {
+    return this.request(`/recovery/snapshots/${id}/rollback`, { method: 'POST' });
+  }
+
+  // Realtime Methods
+  static async getRealtimeChannels() {
+    return this.request('/realtime/channels', { method: 'GET' });
+  }
+
+  static async broadcastRealtime(channel, event, payload) {
+    return this.request('/realtime/broadcast', {
+      method: 'POST',
+      body: JSON.stringify({ channel, event, payload }),
+    });
+  }
+
+  // Edge Functions Methods
+  static async getFunctions() {
+    return this.request('/functions', { method: 'GET' });
+  }
+
+  static async createFunction(name, routePath, code) {
+    return this.request('/functions', {
+      method: 'POST',
+      body: JSON.stringify({ name, routePath, code }),
+    });
+  }
+
+  static async updateFunction(id, data) {
+    return this.request(`/functions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async deleteFunction(id) {
+    return this.request(`/functions/${id}`, { method: 'DELETE' });
+  }
+
+  static async invokeFunction(id, payload = {}) {
+    return this.request(`/functions/${id}/invoke`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // API Keys Methods
+  static async getApiKeys() {
+    return this.request('/api-keys', { method: 'GET' });
+  }
+
+  static async createApiKey(name, role = 'ADMIN') {
+    return this.request('/api-keys', {
+      method: 'POST',
+      body: JSON.stringify({ name, role }),
+    });
+  }
+
+  static async deleteApiKey(id) {
+    return this.request(`/api-keys/${id}`, { method: 'DELETE' });
+  }
+
+  // Database Introspection & SQL Methods
+  static async getDbTables() {
+    return this.request('/database/tables', { method: 'GET' });
+  }
+
+  static async getDbTableData(tableName) {
+    return this.request(`/database/tables/${tableName}/data`, { method: 'GET' });
+  }
+
+  static async executeDbQuery(sql) {
+    return this.request('/database/query', {
+      method: 'POST',
+      body: JSON.stringify({ sql }),
+    });
+  }
+
+  // Logs & Analytics Methods
+  static async getLogs(level, search) {
+    let url = '/logs';
+    const params = [];
+    if (level) params.push(`level=${encodeURIComponent(level)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  static async getAnalyticsOverview() {
+    return this.request('/analytics/overview', { method: 'GET' });
   }
 }
 

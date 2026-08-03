@@ -3,6 +3,7 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>DriveBase - Sync Engine</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
 </head>
 <body class="bg-background text-on-surface font-sans flex min-h-screen">
@@ -21,15 +22,147 @@
 <li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
 </ul>
 </nav>
-<main class="flex-1 p-6 space-y-6">
-<h2 class="text-2xl font-bold">Synchronization Queue &amp; Engine</h2>
-<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
-<p class="text-sm text-on-surface-variant">Sync engine queue managed via PostgreSQL <code class="text-indigo-300 font-mono">sync_queue</code> table and Redis pub/sub:</p>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
-<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">QUEUED JOBS</span><span class="text-xl font-bold text-emerald-400">0</span></div>
-<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">IN PROGRESS</span><span class="text-xl font-bold text-indigo-400">0</span></div>
-<div class="p-4 bg-surface rounded border border-outline-variant"><span class="text-on-surface-variant block">RETRY QUEUE</span><span class="text-xl font-bold text-yellow-400">0</span></div>
+
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <h2 class="text-2xl font-bold">Synchronization Queue &amp; Engine</h2>
+  <div class="flex items-center gap-3">
+    <button id="triggerSyncBtn" onclick="triggerManualSync()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold text-xs transition flex items-center gap-1">
+      <span class="material-symbols-outlined text-[16px]">sync</span> Trigger Auto-Sync Scan
+    </button>
+    <button id="pauseSyncBtn" onclick="togglePauseSync()" class="px-4 py-2 bg-surface border border-outline-variant hover:bg-surface-variant text-on-surface rounded font-semibold text-xs transition flex items-center gap-1">
+      <span class="material-symbols-outlined text-[16px]">pause</span> Pause Queue
+    </button>
+    <button onclick="retryFailedJobs()" class="px-4 py-2 bg-yellow-900/40 border border-yellow-800/40 text-yellow-300 rounded font-semibold text-xs transition hover:bg-yellow-800/60 flex items-center gap-1">
+      <span class="material-symbols-outlined text-[16px]">replay</span> Retry Failed
+    </button>
+  </div>
 </div>
+
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+  <div class="flex justify-between items-center">
+    <p class="text-xs text-on-surface-variant">Background worker status &amp; queue speed:</p>
+    <span id="bandwidthBadge" class="px-3 py-1 bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 rounded-full font-mono text-xs font-bold">⚡ 42.5 MB/s</span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 font-mono text-xs">
+    <div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-1">
+      <span class="text-on-surface-variant block uppercase text-[10px]">QUEUED JOBS</span>
+      <span id="statQueued" class="text-2xl font-bold text-emerald-400">0</span>
+    </div>
+    <div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-1">
+      <span class="text-on-surface-variant block uppercase text-[10px]">IN PROGRESS</span>
+      <span id="statInProgress" class="text-2xl font-bold text-indigo-400">0</span>
+    </div>
+    <div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-1">
+      <span class="text-on-surface-variant block uppercase text-[10px]">COMPLETED</span>
+      <span id="statCompleted" class="text-2xl font-bold text-blue-400">0</span>
+    </div>
+    <div class="p-4 bg-surface rounded-xl border border-outline-variant space-y-1">
+      <span class="text-on-surface-variant block uppercase text-[10px]">FAILED (RETRY)</span>
+      <span id="statFailed" class="text-2xl font-bold text-red-400">0</span>
+    </div>
+  </div>
+</div>
+
+<!-- Active Jobs Table -->
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+  <h3 class="font-bold text-sm text-on-surface">Active Sync Queue Jobs</h3>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs font-mono">
+      <thead>
+        <tr class="text-on-surface-variant border-b border-outline-variant/40">
+          <th class="py-2 px-3">JOB ID</th>
+          <th class="py-2 px-3">OPERATION</th>
+          <th class="py-2 px-3">FILE / RESOURCE</th>
+          <th class="py-2 px-3">STATUS</th>
+          <th class="py-2 px-3">RETRIES</th>
+        </tr>
+      </thead>
+      <tbody id="syncJobsTableBody">
+        <tr><td colspan="5" class="py-4 text-center text-on-surface-variant">Loading sync jobs...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 </main>
+
+<script src="js/api-client.js"></script>
+<script>
+  DriveBaseAPI.requireAuth();
+
+  let isPausedState = false;
+
+  async function loadSyncStatus() {
+    try {
+      const res = await DriveBaseAPI.getSyncStatus();
+      if (res.data) {
+        isPausedState = res.data.isPaused;
+        document.getElementById('bandwidthBadge').innerText = `⚡ ${res.data.bandwidthSpeed}`;
+        document.getElementById('pauseSyncBtn').querySelector('span').innerText = isPausedState ? 'play_arrow' : 'pause';
+        document.getElementById('pauseSyncBtn').childNodes[2].nodeValue = isPausedState ? ' Resume Queue' : ' Pause Queue';
+
+        document.getElementById('statQueued').innerText = res.data.stats.queued;
+        document.getElementById('statInProgress').innerText = res.data.stats.inProgress;
+        document.getElementById('statCompleted').innerText = res.data.stats.completed;
+        document.getElementById('statFailed').innerText = res.data.stats.failed;
+
+        renderJobsTable(res.data.jobs);
+      }
+    } catch(e) {
+      console.warn('Sync status load error:', e.message);
+    }
+  }
+
+  function renderJobsTable(jobs) {
+    const tbody = document.getElementById('syncJobsTableBody');
+    if (!jobs || jobs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-on-surface-variant">No sync jobs in queue.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = jobs.map(j => `
+      <tr class="border-b border-outline-variant/20 hover:bg-surface-variant/20">
+        <td class="py-2 px-3 text-indigo-300 font-bold">${j.id}</td>
+        <td class="py-2 px-3 text-on-surface"><span class="px-2 py-0.5 rounded text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800/40">${j.operation}</span></td>
+        <td class="py-2 px-3 text-on-surface-variant">${j.fileName || j.fileId || '/DriveBase-App/sync_file'}</td>
+        <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] ${j.status === 'COMPLETED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : j.status === 'IN_PROGRESS' ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' : 'bg-yellow-950 text-yellow-300 border border-yellow-800'}">${j.status}</span></td>
+        <td class="py-2 px-3 text-on-surface-variant">${j.retryCount} / 3</td>
+      </tr>
+    `).join('');
+  }
+
+  async function triggerManualSync() {
+    try {
+      await DriveBaseAPI.triggerSync();
+      loadSyncStatus();
+    } catch(e) {
+      alert('Trigger sync failed: ' + e.message);
+    }
+  }
+
+  async function togglePauseSync() {
+    try {
+      if (isPausedState) {
+        await DriveBaseAPI.resumeSync();
+      } else {
+        await DriveBaseAPI.pauseSync();
+      }
+      loadSyncStatus();
+    } catch(e) {
+      alert('Toggle pause failed: ' + e.message);
+    }
+  }
+
+  async function retryFailedJobs() {
+    try {
+      await DriveBaseAPI.retryFailedSync();
+      loadSyncStatus();
+    } catch(e) {
+      alert('Retry failed: ' + e.message);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadSyncStatus);
+  setInterval(loadSyncStatus, 5000);
+</script>
 </body></html>

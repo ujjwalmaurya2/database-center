@@ -1,177 +1,197 @@
 <!DOCTYPE html>
 <html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Edge Functions Explorer - DriveBase</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DriveBase - Edge Functions Execution Engine</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Geist:wght@600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              "colors": {
-                      "tertiary-container": "#006e4b",
-                      "on-tertiary-fixed-variant": "#005236",
-                      "tertiary-fixed": "#6ffbbe",
-                      "surface-dim": "#031427",
-                      "surface-container-highest": "#26364a",
-                      "on-secondary-container": "#adb4ce",
-                      "secondary-fixed": "#dae2fd",
-                      "outline": "#918fa1",
-                      "surface-container-high": "#1b2b3f",
-                      "surface-container-low": "#0b1c30",
-                      "surface-container": "#102034",
-                      "tertiary": "#4edea3",
-                      "surface-container-lowest": "#000f21",
-                      "on-tertiary-container": "#67f4b7",
-                      "on-secondary-fixed-variant": "#3f465c",
-                      "on-tertiary": "#003824",
-                      "on-primary-fixed-variant": "#3323cc",
-                      "on-surface": "#d3e4fe",
-                      "on-secondary-fixed": "#131b2e",
-                      "on-primary-container": "#dad7ff",
-                      "surface-bright": "#2a3a4f",
-                      "primary-container": "#4f46e5",
-                      "on-primary": "#1d00a5",
-                      "primary-fixed": "#e2dfff",
-                      "tertiary-fixed-dim": "#4edea3",
-                      "primary-fixed-dim": "#c3c0ff",
-                      "on-secondary": "#283044",
-                      "error": "#ffb4ab",
-                      "surface-tint": "#c3c0ff",
-                      "on-error": "#690005",
-                      "inverse-primary": "#4d44e3",
-                      "primary": "#c3c0ff",
-                      "surface": "#031427",
-                      "inverse-on-surface": "#213145",
-                      "outline-variant": "#464555",
-                      "background": "#031427",
-                      "on-tertiary-fixed": "#002113",
-                      "secondary-container": "#3f465c",
-                      "secondary": "#bec6e0",
-                      "secondary-fixed-dim": "#bec6e0",
-                      "surface-variant": "#26364a",
-                      "on-background": "#d3e4fe",
-                      "inverse-surface": "#d3e4fe",
-                      "on-surface-variant": "#c7c4d8",
-                      "on-error-container": "#ffdad6",
-                      "error-container": "#93000a",
-                      "on-primary-fixed": "#0f0069"
-              },
-              "borderRadius": {
-                      "DEFAULT": "0.25rem",
-                      "lg": "0.5rem",
-                      "xl": "0.75rem",
-                      "full": "9999px"
-              },
-              "spacing": {
-                      "sm": "0.5rem",
-                      "lg": "1.5rem",
-                      "xs": "0.25rem",
-                      "xl": "2.5rem",
-                      "md": "1rem",
-                      "gutter": "1.5rem",
-                      "container-max": "1440px",
-                      "base": "4px"
-              },
-              "fontFamily": {
-                      "body-md": ["Inter"],
-                      "headline-md-mobile": ["Geist"],
-                      "body-lg": ["Inter"],
-                      "label-sm": ["Inter"],
-                      "headline-sm": ["Geist"],
-                      "display-lg": ["Geist"],
-                      "headline-md": ["Geist"],
-                      "code-md": ["JetBrains Mono"]
-              }
-            },
-          },
-        }
-    </script>
-<style>
-        .code-bg { background-color: #000000; }
-</style>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
 </head>
-<body class="bg-background text-on-background min-h-screen font-body-md selection:bg-primary-container selection:text-on-primary-container flex overflow-hidden">
-<nav class="hidden md:flex flex-col h-full py-md px-sm bg-surface-container-low border-r border-surface-variant fixed left-0 top-0 h-screen w-64 z-40">
-<div class="mb-xl px-sm flex items-center gap-3">
-<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-on-primary-container text-[20px]">rocket_launch</span>
-</div>
-<div class="flex flex-col">
-<span class="font-headline-sm text-headline-sm font-black text-on-surface">DriveBase</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">v1.0.0-milestone1</span>
-</div>
-</div>
-<div class="flex-1 flex flex-col gap-1 overflow-y-auto">
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="index.html"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label-sm text-label-sm">Dashboard</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="auth.html"><span class="material-symbols-outlined text-[20px]">lock</span><span class="font-label-sm text-label-sm">Auth</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="database.html"><span class="material-symbols-outlined text-[20px]">database</span><span class="font-label-sm text-label-sm">Database</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="storage.html"><span class="material-symbols-outlined text-[20px]">folder</span><span class="font-label-sm text-label-sm">Storage</span></a>
-<a class="flex items-center gap-3 px-sm py-2 bg-primary-container text-on-primary-container rounded-lg font-semibold" href="functions.html"><span class="material-symbols-outlined text-[20px]">api</span><span class="font-label-sm text-label-sm">API &amp; Functions</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="sync.html"><span class="material-symbols-outlined text-[20px]">sync</span><span class="font-label-sm text-label-sm">Sync Engine</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="conflicts.html"><span class="material-symbols-outlined text-[20px]">difference</span><span class="font-label-sm text-label-sm">Conflict Detection</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="recovery.html"><span class="material-symbols-outlined text-[20px]">restore</span><span class="font-label-sm text-label-sm">Recovery Center</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="settings.html"><span class="material-symbols-outlined text-[20px]">settings</span><span class="font-label-sm text-label-sm">Settings</span></a>
-<a class="flex items-center gap-3 px-sm py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30" href="logs.html"><span class="material-symbols-outlined text-[20px]">list_alt</span><span class="font-label-sm text-label-sm">Logs</span></a>
-</div>
+<body class="bg-background text-on-surface font-sans flex min-h-screen">
+<nav class="w-64 bg-surface-container-low border-r border-outline-variant p-4 space-y-4">
+<h1 class="text-xl font-bold">DriveBase</h1>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a href="index.html" class="block p-2 hover:bg-surface-variant rounded">Dashboard</a></li>
+<li><a href="auth.html" class="block p-2 hover:bg-surface-variant rounded">Auth</a></li>
+<li><a href="database.html" class="block p-2 hover:bg-surface-variant rounded">Database</a></li>
+<li><a href="storage.html" class="block p-2 hover:bg-surface-variant rounded">Storage</a></li>
+<li><a href="functions.html" class="block p-2 bg-primary-container text-white rounded font-bold">API &amp; Functions</a></li>
+<li><a href="sync.html" class="block p-2 hover:bg-surface-variant rounded">Sync Engine</a></li>
+<li><a href="conflicts.html" class="block p-2 hover:bg-surface-variant rounded">Conflicts</a></li>
+<li><a href="recovery.html" class="block p-2 hover:bg-surface-variant rounded">Recovery Center</a></li>
+<li><a href="settings.html" class="block p-2 hover:bg-surface-variant rounded">Settings</a></li>
+<li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
+</ul>
 </nav>
 
-<main class="flex-1 ml-0 md:ml-64 flex flex-col h-screen overflow-hidden bg-background">
-<header class="flex justify-between items-center h-16 px-gutter w-full bg-surface sticky top-0 z-50 border-b border-surface-variant">
-<div class="flex items-center gap-4">
-<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Edge Functions</h1>
-<div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-tertiary-container/10 border border-tertiary-container/30">
-<span class="w-2 h-2 rounded-full bg-tertiary"></span>
-<span class="font-label-sm text-label-sm text-tertiary">Milestone 1 Architecture Active</span>
-</div>
-</div>
-</header>
-
-<div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
-<div class="w-full lg:w-80 border-r border-surface-variant bg-surface flex flex-col shrink-0">
-<div class="p-4 border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
-<h2 class="font-label-sm text-[13px] text-on-surface font-semibold uppercase tracking-wider">Deployed Functions</h2>
-<button class="w-6 h-6 rounded flex items-center justify-center hover:bg-surface-variant"><span class="material-symbols-outlined text-[16px]">add</span></button>
-</div>
-<div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
-<div class="p-3 rounded-lg bg-surface-variant border border-outline/20 cursor-pointer">
-<div class="flex justify-between items-start mb-2">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[16px] text-primary">functions</span>
-<span class="font-code-md text-code-md text-on-surface font-medium">process_payment</span>
-</div>
-<span class="w-2 h-2 rounded-full bg-tertiary mt-1"></span>
-</div>
-<div class="flex justify-between items-center font-label-sm text-[11px] text-on-surface-variant">
-<span>2m ago</span>
-<span>14.2k requests</span>
-</div>
-</div>
-</div>
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <h2 class="text-2xl font-bold">Edge Functions Execution Sandbox</h2>
+  <span class="text-xs text-emerald-400 font-mono">Isolated V8 / Node.js VM Sandbox Active</span>
 </div>
 
-<div class="flex-1 flex flex-col bg-background min-w-0">
-<div class="h-14 border-b border-surface-variant bg-surface flex items-center justify-between px-4 shrink-0">
-<div class="flex items-center gap-2 bg-surface-variant/50 px-3 py-1.5 rounded border border-outline/10">
-<span class="font-code-md text-[12px] text-primary">POST</span>
-<span class="font-code-md text-[12px] text-on-surface-variant">https://api.drivebase.io/v1/fn/process_payment</span>
-</div>
-<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded-md font-label-sm text-[13px] font-semibold">Deploy</button>
-</div>
-<div class="flex-1 code-bg p-4 font-code-md text-on-surface overflow-auto">
-<pre><code>import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Deployed Functions List -->
+  <div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant space-y-4">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-sm text-on-surface">Deployed Functions</h3>
+      <button onclick="clearFunctionForm()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold">+ New</button>
+    </div>
+    <div id="functionsListContainer" class="space-y-2">
+      <p class="text-xs text-on-surface-variant text-center py-4">Loading functions...</p>
+    </div>
+  </div>
 
-serve(async (req) => {
-  return new Response(JSON.stringify({ status: "DriveBase Edge Function ready" }), {
-    headers: { "Content-Type": "application/json" }
-  });
-});</code></pre>
-</div>
-</div>
+  <!-- Function Editor & Sandbox Invocation -->
+  <div class="lg:col-span-2 space-y-4">
+    <div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant space-y-4">
+      <form id="functionForm" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-on-surface-variant mb-1">Function Name</label>
+            <input id="fnName" type="text" placeholder="e.g. image-optimizer" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-xs text-on-surface font-mono" required/>
+          </div>
+          <div>
+            <label class="block text-xs text-on-surface-variant mb-1">Route Path</label>
+            <input id="fnRoute" type="text" placeholder="/v1/images/process" class="w-full bg-surface border border-outline-variant rounded px-3 py-2 text-xs text-on-surface font-mono" required/>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-on-surface-variant mb-1">JavaScript Function Code (Module Exports Handler)</label>
+          <textarea id="fnCode" rows="6" class="w-full bg-black/70 border border-outline-variant rounded p-3 text-xs text-emerald-300 font-mono" required>module.exports = async function(req) {
+  return {
+    status: 200,
+    body: {
+      message: "Hello from DriveBase Edge Function!",
+      timestamp: new Date(),
+      input: req.body
+    }
+  };
+};</textarea>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold text-xs transition">Deploy Function</button>
+          <button type="button" id="testInvokeBtn" onclick="testInvokeSelectedFunction()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-xs transition">Invoke Function</button>
+        </div>
+      </form>
+      <div id="fnAlert" class="hidden p-3 text-xs rounded font-mono"></div>
+    </div>
+
+    <!-- Invocation Result Panel -->
+    <div id="invocationOutputPanel" class="hidden bg-surface-container-low p-6 rounded-xl border border-indigo-500/40 space-y-2 font-mono">
+      <div class="flex justify-between items-center text-xs">
+        <span class="font-bold text-indigo-300">Sandbox Invocation Output</span>
+        <span id="fnExecutionTime" class="text-emerald-400 font-bold">Execution: 2ms</span>
+      </div>
+      <pre id="fnOutputJson" class="p-3 bg-black/60 rounded text-on-surface text-xs overflow-x-auto"></pre>
+    </div>
+  </div>
 </div>
 </main>
-</body>
-</html>
+
+<script src="js/api-client.js"></script>
+<script>
+  DriveBaseAPI.requireAuth();
+
+  let functionsList = [];
+  let selectedFnId = null;
+
+  async function loadFunctions() {
+    try {
+      const res = await DriveBaseAPI.getFunctions();
+      if (res.data) {
+        functionsList = res.data;
+        renderFunctionsList();
+        if (functionsList.length > 0 && !selectedFnId) {
+          selectFunction(functionsList[0].id);
+        }
+      }
+    } catch(e) {
+      console.warn('Functions load error:', e.message);
+    }
+  }
+
+  function renderFunctionsList() {
+    const container = document.getElementById('functionsListContainer');
+    if (!functionsList || functionsList.length === 0) {
+      container.innerHTML = `<p class="text-xs text-on-surface-variant text-center py-4">No edge functions deployed yet.</p>`;
+      return;
+    }
+    container.innerHTML = functionsList.map(f => `
+      <div onclick="selectFunction('${f.id}')" class="p-3 rounded-lg border cursor-pointer transition ${selectedFnId === f.id ? 'bg-surface-variant border-indigo-500' : 'bg-surface border-outline-variant/40 hover:bg-surface-variant/40'}">
+        <div class="flex justify-between items-start">
+          <span class="font-mono text-xs font-bold text-indigo-300">${f.name}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">${f.status}</span>
+        </div>
+        <div class="flex justify-between items-center pt-2 text-[11px] text-on-surface-variant font-mono">
+          <span>${f.routePath}</span>
+          <span>${f.invocationCount} invocations</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectFunction(id) {
+    selectedFnId = id;
+    renderFunctionsList();
+    const fn = functionsList.find(f => f.id === id);
+    if (fn) {
+      document.getElementById('fnName').value = fn.name;
+      document.getElementById('fnRoute').value = fn.routePath;
+      document.getElementById('fnCode').value = fn.code;
+    }
+  }
+
+  function clearFunctionForm() {
+    selectedFnId = null;
+    document.getElementById('fnName').value = '';
+    document.getElementById('fnRoute').value = '/v1/new-function';
+    document.getElementById('fnCode').value = 'module.exports = async function(req) {\n  return { status: 200, body: { ok: true } };\n};';
+    renderFunctionsList();
+  }
+
+  document.getElementById('functionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('fnName').value;
+    const routePath = document.getElementById('fnRoute').value;
+    const code = document.getElementById('fnCode').value;
+    const alert = document.getElementById('fnAlert');
+    try {
+      if (selectedFnId) {
+        await DriveBaseAPI.updateFunction(selectedFnId, { name, code });
+        alert.className = 'p-3 text-xs rounded font-mono bg-emerald-900/40 text-emerald-300 border border-emerald-500/30';
+        alert.innerText = `✓ Updated edge function '${name}'!`;
+      } else {
+        const created = await DriveBaseAPI.createFunction(name, routePath, code);
+        selectedFnId = created.data.id;
+        alert.className = 'p-3 text-xs rounded font-mono bg-emerald-900/40 text-emerald-300 border border-emerald-500/30';
+        alert.innerText = `✓ Deployed new edge function '${name}'!`;
+      }
+      alert.classList.remove('hidden');
+      loadFunctions();
+    } catch(err) {
+      alert.className = 'p-3 text-xs rounded font-mono bg-red-900/40 text-red-300 border border-red-500/30';
+      alert.innerText = err.message;
+      alert.classList.remove('hidden');
+    }
+  });
+
+  async function testInvokeSelectedFunction() {
+    if (!selectedFnId && functionsList.length > 0) selectedFnId = functionsList[0].id;
+    if (!selectedFnId) return alert('Deploy a function first before invoking.');
+
+    const panel = document.getElementById('invocationOutputPanel');
+    try {
+      const res = await DriveBaseAPI.invokeFunction(selectedFnId, { test: 'payload_sample' });
+      panel.classList.remove('hidden');
+      document.getElementById('fnExecutionTime').innerText = `Execution: ${res.data.executionTimeMs}ms`;
+      document.getElementById('fnOutputJson').innerText = JSON.stringify(res.data.result, null, 2);
+    } catch(e) {
+      alert('Invocation error: ' + e.message);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadFunctions);
+</script>
+</body></html>

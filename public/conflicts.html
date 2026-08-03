@@ -1,77 +1,162 @@
 <!DOCTYPE html>
 <html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>DriveBase - Conflict Detection</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DriveBase - Conflict Resolution Engine</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-surface": "#d3e4fe",
-                        "secondary": "#bec6e0",
-                        "surface": "#031427",
-                        "primary-container": "#4f46e5",
-                        "primary": "#c3c0ff",
-                        "tertiary": "#4edea3",
-                        "background": "#031427",
-                        "outline-variant": "#464555",
-                        "surface-container-low": "#0b1c30",
-                        "on-surface-variant": "#c7c4d8"
-                    }
-                }
-            }
-        }
-    </script>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface":"#031427","surface-container-low":"#0b1c30","primary-container":"#4f46e5","on-surface":"#d3e4fe","on-surface-variant":"#c7c4d8","outline-variant":"#464555","background":"#031427"}}}}</script>
 </head>
-<body class="bg-background text-on-surface font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
-<nav class="hidden md:flex flex-col p-4 space-y-2 w-[260px] h-screen sticky left-0 top-0 border-r border-outline-variant bg-surface flex-shrink-0 z-40">
-<div class="flex items-center gap-2 mb-6 px-1">
-<span class="material-symbols-outlined text-primary text-2xl">difference</span>
-<div>
-<h1 class="font-headline-sm text-lg font-bold text-on-surface">DriveBase</h1>
-<p class="text-xs text-on-surface-variant">v1.0.0-milestone1</p>
-</div>
-</div>
-<div class="flex-1 space-y-1">
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="index.html"><span class="material-symbols-outlined">dashboard</span>Overview</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="auth.html"><span class="material-symbols-outlined">lock</span>Auth</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="database.html"><span class="material-symbols-outlined">database</span>Database</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="storage.html"><span class="material-symbols-outlined">cloud_done</span>Storage</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-medium" href="conflicts.html"><span class="material-symbols-outlined">difference</span>Conflicts</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface" href="logs.html"><span class="material-symbols-outlined">terminal</span>Logs</a>
-</div>
+<body class="bg-background text-on-surface font-sans flex min-h-screen">
+<nav class="w-64 bg-surface-container-low border-r border-outline-variant p-4 space-y-4">
+<h1 class="text-xl font-bold">DriveBase</h1>
+<ul class="space-y-2 text-sm text-on-surface-variant">
+<li><a href="index.html" class="block p-2 hover:bg-surface-variant rounded">Dashboard</a></li>
+<li><a href="auth.html" class="block p-2 hover:bg-surface-variant rounded">Auth</a></li>
+<li><a href="database.html" class="block p-2 hover:bg-surface-variant rounded">Database</a></li>
+<li><a href="storage.html" class="block p-2 hover:bg-surface-variant rounded">Storage</a></li>
+<li><a href="functions.html" class="block p-2 hover:bg-surface-variant rounded">API &amp; Functions</a></li>
+<li><a href="sync.html" class="block p-2 hover:bg-surface-variant rounded">Sync Engine</a></li>
+<li><a href="conflicts.html" class="block p-2 bg-primary-container text-white rounded font-bold">Conflicts</a></li>
+<li><a href="recovery.html" class="block p-2 hover:bg-surface-variant rounded">Recovery Center</a></li>
+<li><a href="settings.html" class="block p-2 hover:bg-surface-variant rounded">Settings</a></li>
+<li><a href="logs.html" class="block p-2 hover:bg-surface-variant rounded">Logs</a></li>
+</ul>
 </nav>
 
-<div class="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden">
-<header class="flex justify-between items-center h-14 px-6 sticky top-0 z-50 bg-surface/80 border-b border-outline-variant">
-<h2 class="font-headline-md text-lg text-on-surface font-bold">Conflict Resolution Engine</h2>
-<span class="text-xs text-tertiary">Conflict schema ready</span>
-</header>
+<main class="flex-1 p-6 space-y-6 overflow-y-auto">
+<div class="flex justify-between items-center">
+  <h2 class="text-2xl font-bold">Conflict Resolution Engine</h2>
+  <span class="text-xs text-emerald-400 font-mono">SHA256 &amp; Version Tracking Active</span>
+</div>
 
-<main class="flex-1 overflow-y-auto p-6 space-y-6">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
-<p class="text-xs text-on-surface-variant uppercase">Active Conflicts</p>
-<h3 class="text-3xl font-bold text-on-surface mt-2">0</h3>
-<span class="text-xs text-tertiary">All files synchronized</span>
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-1">
+  <span class="text-xs text-on-surface-variant uppercase">Unresolved Conflicts</span>
+  <h3 id="activeConflictCount" class="text-3xl font-bold text-yellow-400">0</h3>
+  <span class="text-xs text-on-surface-variant">Requires manual or auto strategy</span>
 </div>
-<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
-<p class="text-xs text-on-surface-variant uppercase">Resolution Strategy</p>
-<h3 class="text-3xl font-bold text-on-surface mt-2">Prisma &amp; Redis</h3>
-<span class="text-xs text-on-surface-variant">Checksum &amp; version tracking</span>
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-1">
+  <span class="text-xs text-on-surface-variant uppercase">Resolution Strategy</span>
+  <h3 class="text-xl font-bold text-indigo-300">KEEP_LOCAL / KEEP_DRIVE</h3>
+  <span class="text-xs text-on-surface-variant">Atomic Prisma state updates</span>
 </div>
-<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
-<p class="text-xs text-on-surface-variant uppercase">Storage Provider</p>
-<h3 class="text-3xl font-bold text-on-surface mt-2">Google Drive</h3>
-<span class="text-xs text-tertiary">StorageProvider Interface Active</span>
+<div class="p-5 rounded-xl bg-surface-container-low border border-outline-variant space-y-1">
+  <span class="text-xs text-on-surface-variant uppercase">Storage Provider</span>
+  <h3 class="text-xl font-bold text-on-surface">Google Drive</h3>
+  <span class="text-xs text-emerald-400">Isolated App Folder Active</span>
 </div>
+</div>
+
+<!-- Active Conflicts Table -->
+<div class="p-6 rounded-xl bg-surface-container-low border border-outline-variant space-y-4">
+  <h3 class="font-bold text-sm text-on-surface">Active Metadata Conflicts</h3>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs font-mono">
+      <thead>
+        <tr class="text-on-surface-variant border-b border-outline-variant/40">
+          <th class="py-2 px-3">CONFLICT ID</th>
+          <th class="py-2 px-3">FILE PATH</th>
+          <th class="py-2 px-3">CONFLICT TYPE</th>
+          <th class="py-2 px-3">STATUS</th>
+          <th class="py-2 px-3 text-right">RESOLVE ACTION</th>
+        </tr>
+      </thead>
+      <tbody id="conflictsTableBody">
+        <tr><td colspan="5" class="py-4 text-center text-on-surface-variant">Loading conflict queue...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Side-by-Side Diff Drawer (Hidden by default) -->
+<div id="diffDrawer" class="hidden p-6 rounded-xl bg-surface-container-low border border-indigo-500/40 space-y-4">
+  <div class="flex justify-between items-center">
+    <h3 class="font-bold text-sm text-indigo-300" id="diffTitle">Side-by-Side Version Diff</h3>
+    <button onclick="document.getElementById('diffDrawer').classList.add('hidden')" class="text-xs text-on-surface-variant hover:text-on-surface">Close Diff</button>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+    <div class="p-4 bg-surface rounded-lg border border-outline-variant space-y-2">
+      <span class="text-emerald-400 font-bold block">Local PostgreSQL Version</span>
+      <pre id="localDiffSnippet" class="p-3 bg-black/40 rounded text-on-surface text-[11px] overflow-x-auto"></pre>
+      <button id="keepLocalBtn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold transition">Keep Local Version</button>
+    </div>
+    <div class="p-4 bg-surface rounded-lg border border-outline-variant space-y-2">
+      <span class="text-indigo-400 font-bold block">Remote Google Drive Version</span>
+      <pre id="driveDiffSnippet" class="p-3 bg-black/40 rounded text-on-surface text-[11px] overflow-x-auto"></pre>
+      <button id="keepDriveBtn" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition">Keep Google Drive Version</button>
+    </div>
+  </div>
 </div>
 </main>
-</div>
-</body>
-</html>
+
+<script src="js/api-client.js"></script>
+<script>
+  DriveBaseAPI.requireAuth();
+
+  let activeConflicts = [];
+
+  async function loadConflicts() {
+    try {
+      const res = await DriveBaseAPI.getConflicts();
+      if (res.data) {
+        activeConflicts = res.data;
+        document.getElementById('activeConflictCount').innerText = activeConflicts.length;
+        renderConflictsTable();
+      }
+    } catch(e) {
+      console.warn('Conflicts load error:', e.message);
+    }
+  }
+
+  function renderConflictsTable() {
+    const tbody = document.getElementById('conflictsTableBody');
+    if (!activeConflicts || activeConflicts.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-on-surface-variant">No unresolved metadata conflicts detected!</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = activeConflicts.map(c => `
+      <tr class="border-b border-outline-variant/20 hover:bg-surface-variant/20">
+        <td class="py-3 px-3 text-indigo-300 font-bold">${c.id}</td>
+        <td class="py-3 px-3 text-on-surface-variant">${c.filePath}</td>
+        <td class="py-3 px-3 text-yellow-300 font-semibold">${c.conflictType}</td>
+        <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-yellow-950 text-yellow-300 border border-yellow-800">${c.status}</span></td>
+        <td class="py-3 px-3 text-right space-x-2">
+          <button onclick="viewDiff('${c.id}')" class="px-3 py-1 bg-surface border border-outline-variant text-indigo-300 hover:bg-surface-variant rounded text-[11px]">View Diff</button>
+          <button onclick="resolveConflictDirect('${c.id}', 'KEEP_LOCAL')" class="px-2.5 py-1 bg-emerald-900/40 text-emerald-300 hover:bg-emerald-800/60 rounded text-[11px]">Keep Local</button>
+          <button onclick="resolveConflictDirect('${c.id}', 'KEEP_DRIVE')" class="px-2.5 py-1 bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 rounded text-[11px]">Keep Drive</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function viewDiff(conflictId) {
+    try {
+      const res = await DriveBaseAPI.getConflictDiff(conflictId);
+      if (res.data) {
+        document.getElementById('diffTitle').innerText = `Side-by-Side Version Diff (${res.data.conflict.filePath})`;
+        document.getElementById('localDiffSnippet').innerText = res.data.localVersion.contentSnippet;
+        document.getElementById('driveDiffSnippet').innerText = res.data.driveVersion.contentSnippet;
+
+        document.getElementById('keepLocalBtn').onclick = () => resolveConflictDirect(conflictId, 'KEEP_LOCAL');
+        document.getElementById('keepDriveBtn').onclick = () => resolveConflictDirect(conflictId, 'KEEP_DRIVE');
+
+        document.getElementById('diffDrawer').classList.remove('hidden');
+      }
+    } catch(e) {
+      alert('Diff load error: ' + e.message);
+    }
+  }
+
+  async function resolveConflictDirect(conflictId, strategy) {
+    try {
+      await DriveBaseAPI.resolveConflict(conflictId, strategy);
+      document.getElementById('diffDrawer').classList.add('hidden');
+      loadConflicts();
+    } catch(e) {
+      alert('Resolution error: ' + e.message);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadConflicts);
+</script>
+</body></html>

@@ -21,7 +21,7 @@ const swaggerDocument = {
   info: {
     title: 'DriveBase BaaS Platform API',
     version: '1.0.0',
-    description: 'Production-ready Backend-as-a-Service API documentation for DriveBase. Supports multi-tenant projects, authentication, BYO Google OAuth credentials, RBAC, Redis session caching, and Google Drive storage provider abstraction.',
+    description: 'Production-ready Backend-as-a-Service API documentation for DriveBase. Supports multi-tenant projects, BYO Google OAuth credentials, Sync Engine, Conflicts, Recovery, Realtime, Edge Functions, Database Introspection, API Keys, and Centralized Audit Logging.',
     contact: {
       name: 'DriveBase Engineering Team',
       email: 'support@drivebase.io',
@@ -38,44 +38,15 @@ const swaggerDocument = {
     { name: 'Authentication', description: 'User registration, login, JWT token rotation, and profile management' },
     { name: 'Google Drive Storage', description: 'Google OAuth consent, AES-256 token security, Drive folder isolation, quota checks, and file operations' },
     { name: 'Projects & Environment', description: 'Multi-tenant project CRUD, BYO Google API Credentials, status management, and encrypted secrets' },
-    { name: 'Administration', description: 'RBAC protected administrative routes and system tests' },
+    { name: 'Sync Engine', description: 'Background job queues, manual auto-sync scan trigger, pause, resume, and retry' },
+    { name: 'Conflicts', description: 'Conflict detection, SHA256 diff comparison, and resolution strategies' },
+    { name: 'Recovery', description: 'System & user recovery snapshots and point-in-time state rollback' },
+    { name: 'Realtime', description: 'WebSocket channels, message broadcast, and client presence' },
+    { name: 'Edge Functions', description: 'Isolated serverless V8/Node.js VM execution environment and invocation' },
+    { name: 'API Generator', description: 'Role-based API key generation and revocation' },
+    { name: 'Database', description: 'Schema introspection, paginated table data, and raw SQL console execution' },
+    { name: 'Logs & Analytics', description: 'Centralized audit event logs stream and project performance metrics' },
   ],
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Enter your 15-minute JWT Access Token obtained from /auth/login or /auth/register',
-      },
-    },
-    schemas: {
-      FileMetadata: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', example: 'gdrive_file_1294812' },
-          name: { type: 'string', example: 'document.pdf' },
-          path: { type: 'string', example: '/DriveBase-App/document.pdf' },
-          isFolder: { type: 'boolean', example: false },
-          size: { type: 'integer', example: 1048576 },
-          mimeType: { type: 'string', example: 'application/pdf' },
-          checksum: { type: 'string', example: 'md5_39ad0c3b' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-      QuotaInfo: {
-        type: 'object',
-        properties: {
-          totalBytes: { type: 'integer', example: 16106127360 },
-          usedBytes: { type: 'integer', example: 6657199308 },
-          remainingBytes: { type: 'integer', example: 9448928052 },
-        },
-      },
-      Error400: { ...errorSchemaRef, example: { success: false, error: { message: 'Validation failed', statusCode: 400 } } },
-      Error401: { ...errorSchemaRef, example: { success: false, error: { message: 'Unauthorized: Access token missing or invalid', statusCode: 401 } } },
-      Error500: { ...errorSchemaRef, example: { success: false, error: { message: 'Internal server error', statusCode: 500 } } },
-    },
-  },
   paths: {
     '/health': { get: { tags: ['Health'], summary: 'System Liveness Probe', responses: { '200': { description: 'Healthy' } } } },
     '/ready': { get: { tags: ['Health'], summary: 'System Readiness Probe', responses: { '200': { description: 'Ready' } } } },
@@ -91,15 +62,38 @@ const swaggerDocument = {
     '/storage/quota': { get: { tags: ['Google Drive Storage'], summary: 'Get storage quota metrics (total, used, remaining)', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Quota metrics' } } } },
     '/storage/upload': { post: { tags: ['Google Drive Storage'], summary: 'Upload file directly to Google Drive app folder', security: [{ bearerAuth: [] }], responses: { '201': { description: 'Uploaded metadata' } } } },
     '/projects/{id}/google-credentials': {
-      get: { tags: ['Projects & Environment'], summary: 'Get project BYO Google OAuth credentials status & masked secret', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Credentials status & masked secret' } } },
-      post: { tags: ['Projects & Environment'], summary: 'Save project BYO Google Client ID and AES-256 encrypted Client Secret', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Saved' } } },
-      delete: { tags: ['Projects & Environment'], summary: 'Remove project BYO Google API credentials', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Deleted' } } },
+      get: { tags: ['Projects & Environment'], summary: 'Get project BYO Google OAuth credentials status', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Status' } } },
+      post: { tags: ['Projects & Environment'], summary: 'Save project BYO Google Client ID and Client Secret', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Saved' } } },
+      delete: { tags: ['Projects & Environment'], summary: 'Remove project BYO Google API credentials', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Deleted' } } },
     },
-    '/storage/files/{id}/download': { get: { tags: ['Google Drive Storage'], summary: 'Download file from Google Drive', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'File binary stream' } } } },
-    '/storage/files/{id}': {
-      patch: { tags: ['Google Drive Storage'], summary: 'Rename file on Google Drive', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Updated file metadata' } } },
-      delete: { tags: ['Google Drive Storage'], summary: 'Delete file from Google Drive', security: [{ bearerAuth: [] }], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Deleted' } } },
+    '/sync/status': { get: { tags: ['Sync Engine'], summary: 'Get sync queue status & bandwidth', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Queue status' } } } },
+    '/sync/trigger': { post: { tags: ['Sync Engine'], summary: 'Trigger manual auto-sync scan', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Triggered' } } } },
+    '/sync/pause': { post: { tags: ['Sync Engine'], summary: 'Pause sync queue processing', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Paused' } } } },
+    '/sync/resume': { post: { tags: ['Sync Engine'], summary: 'Resume sync queue processing', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Resumed' } } } },
+    '/sync/retry-failed': { post: { tags: ['Sync Engine'], summary: 'Retry all failed sync jobs', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Retried' } } } },
+    '/conflicts': { get: { tags: ['Conflicts'], summary: 'List unresolved metadata conflicts', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Conflicts list' } } } },
+    '/conflicts/{id}/diff': { get: { tags: ['Conflicts'], summary: 'Get side-by-side JSON diff', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Diff data' } } } },
+    '/conflicts/{id}/resolve': { post: { tags: ['Conflicts'], summary: 'Resolve conflict with strategy', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Resolved' } } } },
+    '/recovery/snapshots': {
+      get: { tags: ['Recovery'], summary: 'List system recovery snapshots', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Snapshots' } } },
+      post: { tags: ['Recovery'], summary: 'Create point-in-time recovery snapshot', security: [{ bearerAuth: [] }], responses: { '201': { description: 'Created' } } },
     },
+    '/recovery/snapshots/{id}/rollback': { post: { tags: ['Recovery'], summary: 'Rollback project state to snapshot', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Rollback result' } } } },
+    '/realtime/channels': { get: { tags: ['Realtime'], summary: 'List active WebSocket channels', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Channels' } } } },
+    '/realtime/broadcast': { post: { tags: ['Realtime'], summary: 'Broadcast event message to channel', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Broadcasted' } } } },
+    '/functions': {
+      get: { tags: ['Edge Functions'], summary: 'List deployed edge functions', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Functions' } } },
+      post: { tags: ['Edge Functions'], summary: 'Deploy new edge function', security: [{ bearerAuth: [] }], responses: { '201': { description: 'Deployed' } } },
+    },
+    '/functions/{id}/invoke': { post: { tags: ['Edge Functions'], summary: 'Invoke serverless function in V8 sandbox', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Invocation output' } } } },
+    '/api-keys': {
+      get: { tags: ['API Generator'], summary: 'List project API keys', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Keys list' } } },
+      post: { tags: ['API Generator'], summary: 'Generate new API key with scope', security: [{ bearerAuth: [] }], responses: { '201': { description: 'Generated' } } },
+    },
+    '/database/tables': { get: { tags: ['Database'], summary: 'Fetch database schemas & tables', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Tables' } } } },
+    '/database/query': { post: { tags: ['Database'], summary: 'Execute raw SQL query', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Query result' } } } },
+    '/logs': { get: { tags: ['Logs & Analytics'], summary: 'Get paginated audit logs', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Logs' } } } },
+    '/analytics/overview': { get: { tags: ['Logs & Analytics'], summary: 'Get project health & metrics overview', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Analytics' } } } },
   },
 };
 
