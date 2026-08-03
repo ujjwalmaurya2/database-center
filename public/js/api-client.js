@@ -1,4 +1,4 @@
-// DriveBase Central API Client with Dynamic Production BaseURL & Resilience
+// DriveBase Central API Client with Dynamic Production BaseURL & HTML Redirect Resilience
 class DriveBaseAPI {
   static get baseUrl() {
     if (typeof window !== 'undefined' && window.location) {
@@ -50,7 +50,7 @@ class DriveBaseAPI {
     const isAuthPage = path.endsWith('auth.html') || path.endsWith('/auth');
     
     if (!token && !isAuthPage) {
-      console.warn('[DriveBase Auth] No access token found. Redirecting to auth page.');
+      console.warn('[DriveBase Auth] No access token found in localStorage. Redirecting to auth page.');
       window.location.href = 'auth.html';
       return false;
     }
@@ -66,6 +66,20 @@ class DriveBaseAPI {
     if (projectId) params.push(`projectId=${encodeURIComponent(projectId)}`);
     if (params.length > 0) url += `?${params.join('&')}`;
     return url;
+  }
+
+  static showWarningBanner(msg) {
+    console.warn('[DriveBase Notice]', msg);
+    let banner = document.getElementById('drivebase-warning-banner');
+    if (!banner && typeof document !== 'undefined' && document.body) {
+      banner = document.createElement('div');
+      banner.id = 'drivebase-warning-banner';
+      banner.className = 'fixed bottom-4 right-4 z-50 p-4 bg-yellow-950/90 text-yellow-200 border border-yellow-700/60 rounded-xl shadow-2xl text-xs font-mono max-w-md flex items-center justify-between gap-3';
+      document.body.appendChild(banner);
+    }
+    if (banner) {
+      banner.innerHTML = `<span>⚠️ ${msg}</span><button onclick="this.parentElement.remove()" class="text-yellow-400 font-bold px-1">&times;</button>`;
+    }
   }
 
   static async request(endpoint, options = {}) {
@@ -85,30 +99,50 @@ class DriveBaseAPI {
         headers,
       });
 
+      const contentType = response.headers.get('content-type') || '';
+
+      // Hardened Check 1: If server returns HTML instead of JSON for API route, DO NOT REDIRECT
+      if (contentType.includes('text/html')) {
+        console.error('[DriveBase API Error] Received HTML instead of JSON. Check Vercel API routing.');
+        this.showWarningBanner('Backend API connection issue. Please verify Vercel environment variables.');
+        throw new Error('Received HTML response from API endpoint. Check serverless configuration.');
+      }
+
       let data;
       try {
         data = await response.json();
       } catch (jsonErr) {
-        data = { error: { message: 'Invalid server response' } };
+        console.error('[DriveBase API Error] Failed to parse JSON response.');
+        throw new Error('Invalid JSON server response');
       }
 
-      // ONLY handle explicit 401 Unauthorized for true invalid/expired tokens (do NOT redirect on 500, 502, 503, 504, 404, or network glitches)
-      if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
-        console.warn(`[DriveBase API] 401 Unauthorized on ${endpoint}. Session token expired.`);
-        this.clearSession();
-        const path = (window.location.pathname || '').toLowerCase();
-        if (!path.endsWith('auth.html') && !path.endsWith('/auth')) {
-          window.location.href = 'auth.html';
+      // Hardened Check 2: Only redirect to /auth if status: 401 AND code: "UNAUTHORIZED"
+      if (response.status === 401 && (data.code === 'UNAUTHORIZED' || data.error?.code === 'UNAUTHORIZED')) {
+        if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+          console.warn(`[DriveBase API] 401 Unauthorized (UNAUTHORIZED) on ${endpoint}. Session token expired.`);
+          this.clearSession();
+          const path = (window.location.pathname || '').toLowerCase();
+          if (!path.endsWith('auth.html') && !path.endsWith('/auth')) {
+            window.location.href = 'auth.html';
+          }
+          throw new Error('Session expired. Please log in again.');
         }
-        throw new Error('Session expired. Please log in again.');
       }
 
+      // 500 or Network/Server errors: Keep user on page, display warning banner, DO NOT clear localStorage
       if (!response.ok) {
-        throw new Error(data.error?.message || `API request failed with status ${response.status}`);
+        const errMsg = data.error?.message || data.message || `API request failed with status ${response.status}`;
+        if (response.status >= 500) {
+          this.showWarningBanner(`Server response error (${response.status}): ${errMsg}`);
+        }
+        throw new Error(errMsg);
       }
+
       return data;
     } catch (error) {
-      console.error(`[DriveBase API Network Note] ${endpoint}:`, error.message);
+      if (!error.message.includes('Session expired')) {
+        console.error(`[DriveBase API Network Note] ${endpoint}:`, error.message);
+      }
       throw error;
     }
   }

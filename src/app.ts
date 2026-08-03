@@ -45,6 +45,15 @@ app.use('/', healthRouter);
 
 // Register API v1 Routers
 const apiRouter = express.Router();
+
+// Production Health Check route under /api/v1/health
+apiRouter.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/auth', googleAuthRouter);
 apiRouter.use('/projects', projectRouter);

@@ -4,20 +4,56 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/v1/(.*)",
-      "destination": "/api/index.ts"
+      "source": "/api/v1/:path*",
+      "destination": "/api/index"
     },
     {
       "source": "/health",
-      "destination": "/api/index.ts"
+      "destination": "/api/index"
     },
     {
-      "source": "/ready",
-      "destination": "/api/index.ts"
+      "source": "/auth",
+      "destination": "/auth.html"
     },
     {
-      "source": "/metrics",
-      "destination": "/api/index.ts"
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/database",
+      "destination": "/database.html"
+    },
+    {
+      "source": "/storage",
+      "destination": "/storage.html"
+    },
+    {
+      "source": "/functions",
+      "destination": "/functions.html"
+    },
+    {
+      "source": "/sync",
+      "destination": "/sync.html"
+    },
+    {
+      "source": "/conflicts",
+      "destination": "/conflicts.html"
+    },
+    {
+      "source": "/recovery",
+      "destination": "/recovery.html"
+    },
+    {
+      "source": "/realtime",
+      "destination": "/realtime.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/settings.html"
+    },
+    {
+      "source": "/logs",
+      "destination": "/logs.html"
     }
   ]
 }
